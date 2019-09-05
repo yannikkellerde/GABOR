@@ -1,0 +1,51 @@
+#qango6x6{
+    position: absolute;
+    width: 750px;
+    height: 750px;
+    left: 50px;
+    top: 50px;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+#qango6x6 tr{
+    height:125px;
+}
+
+#qango6x6 td{
+    width:125px;
+    text-align: center;
+    font-size: 82px;
+    cursor: pointer;
+}
+
+.stone{
+    width:99px;
+    height:99px;
+    border-radius: 50%;
+    margin-left:13px;
+}
+
+.whitestone{
+    background-color: white;
+}
+
+.blackstone{
+    background-color: black;
+}
+
+.blocked_square{
+    text-align: center;
+    font-size: 82px;
+    color:black;
+}
+
+#rankshow{
+    position: absolute;
+    width: 400px;
+    text-align: center;
+    left: calc(50% - 200px);
+    top: 850px;
+    font-size: 20px;
+    color:white;
+}

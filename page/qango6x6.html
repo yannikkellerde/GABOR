@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="styles/explore_results.css">
+    <link rel="stylesheet" href="styles/qango6x6.css">
+    <meta charset="utf-8"/>
+</head>
+
+<body>
+<script type="text/javascript" src="../json/qango6x6_js_readable.js"></script>
+<table id="qango6x6">
+    <tbody>
+        <tr>
+            <td class="pink"></td>
+            <td class="pink"></td>
+            <td class="orange"></td>
+            <td class="yellow"></td>
+            <td class="pink"></td>
+            <td class="pink"></td>
+        </tr>
+        <tr>
+            <td class="pink"></td>
+            <td class="orange"></td>
+            <td class="blue"></td>
+            <td class="green"></td>
+            <td class="yellow"></td>
+            <td class="pink"></td>
+        </tr>
+        <tr>
+            <td class="orange"></td>
+            <td class="blue"></td>
+            <td class="blue"></td>
+            <td class="green"></td>
+            <td class="green"></td>
+            <td class="yellow"></td>
+        </tr>
+        <tr>
+            <td class="yellow"></td>
+            <td class="green"></td>
+            <td class="green"></td>
+            <td class="blue"></td>
+            <td class="blue"></td>
+            <td class="orange"></td>
+        </tr>
+        <tr>
+            <td class="pink"></td>
+            <td class="yellow"></td>
+            <td class="green"></td>
+            <td class="blue"></td>
+            <td class="orange"></td>
+            <td class="pink"></td>
+        </tr>
+        <tr>
+            <td class="pink"></td>
+            <td class="pink"></td>
+            <td class="yellow"></td>
+            <td class="orange"></td>
+            <td class="pink"></td>
+            <td class="pink"></td>
+        </tr>
+    </tbody>
+</table>
+<div id="main-wrap">
+    <div class="analyse__tools">
+        <section class="explorer-box sub-box">
+            <div class="data">
+                <table class="moves">
+                    <thead>
+                        <tr>
+                            <th class="title">Move</th>
+                            <th class="title">Proof Number</th>
+                            <th class="title">Disproof Number</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table_data">
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+    <div class="jumps">
+        <button class="w3-button w3-large w3-black disabled" id="go_start" onclick="go_start()">&laquo;</button>
+        <button class="w3-button w3-large w3-black disabled" id="go_back" onclick="go_back()">‹</button>
+        <button class="w3-button w3-large w3-black disabled" id="go_forward" onclick="go_forward()">›</button>
+        <button class="w3-button w3-large w3-black disabled" id="go_end" onclick="go_end()">&raquo;</button>
+    </div>
+</div>
+<script>
+
+function move_int_to_str(int_move){
+    return "abcdef"[int_move % 6]+(parseInt(int_move/6)+1)
+}
+
+function set_disablility(){
+    document.getElementById("go_start").classList.remove("disabled")
+    document.getElementById("go_back").classList.remove("disabled")
+    document.getElementById("go_forward").classList.remove("disabled")
+    document.getElementById("go_end").classList.remove("disabled")
+    if (tree_index==tree_move.length-1){
+        document.getElementById("go_forward").classList.add("disabled")
+        document.getElementById("go_end").classList.add("disabled")
+    }
+    if (tree_index==0){
+        document.getElementById("go_start").classList.add("disabled")
+        document.getElementById("go_back").classList.add("disabled")
+    }
+}
+
+function show_moves(){
+    document.getElementById("table_data").innerHTML="";
+    for (i in current.children){
+        var c = current.children[i];
+        var move = c.move
+        var tr = document.createElement("tr");
+        var move_elem = document.createElement("td");
+        var pn_elem = document.createElement("td");
+        var dn_elem = document.createElement("td");
+        move_elem.innerText = move_int_to_str(move);
+        pn_elem.innerText = c.pn;
+        dn_elem.innerText = c.dn;
+        tr.appendChild(move_elem);
+        tr.appendChild(pn_elem);
+        tr.appendChild(dn_elem);
+        tr.setAttribute("onclick","go_deeper('"+move+"')")
+        document.getElementById("table_data").appendChild(tr);
+    }
+}
+
+function position_move(move){
+    position[move] = onturn
+    if (onturn==1){
+        onturn=2
+    }
+    else{
+        onturn=1
+    }
+}
+
+function revert_move(move){
+    position[move] = 0
+    if (onturn==1){
+        onturn=2
+    }
+    else{
+        onturn=1
+    }
+}
+
+function go_deeper(move){
+    for (cid in current.children){
+        c = current.children[cid]
+        if (c.move == move){
+            current = c
+            break
+        }
+    }
+    tree_index++;
+    if (tree_move.length>tree_index&&tree_move[tree_index]!=current){
+        tree_move = tree_move.slice(0, tree_index)
+    }
+    tree_move.push([current, move]);
+    position_move(move)
+    show_moves()
+    set_disablility();
+    show_pos()
+}
+
+function go_forward(){
+    if (tree_index==tree_move.length-1){return}
+    tree_index++;
+    current=tree_move[tree_index][0];
+    position_move(tree_move[tree_index][1]);
+    show_moves();
+    set_disablility();
+    show_pos();
+}
+
+function go_end(){
+    while (tree_index!=tree_move.length-1){
+        go_forward()
+    }
+}
+
+function go_back(){
+    if (tree_index==0){return}
+    revert_move(tree_move[tree_index][1])
+    tree_index--;
+    current=tree_move[tree_index][0];
+    show_moves();
+    set_disablility();
+    show_pos();
+}
+
+function go_start(){
+    while (tree_index!=0){
+        go_back()
+    }
+}
+
+function show_pos(){
+    var tbody = document.getElementById("qango6x6").children[0]
+    for (i in position){
+        td = tbody.children[parseInt(i/6)].children[i%6]
+        if (position[i] == 0){
+            td.innerHTML = ""
+        }
+        else if (position[i] == 1){
+            td.innerHTML="<div class='stone blackstone'></div>"
+        }
+        else if (position[i] == 2){
+            td.innerHTML="<div class='stone whitestone'></div>"
+        }
+    }
+}
+
+function make_move(square){
+    if (!(square in current.children)){
+        return
+    }
+    go_deeper(square)
+}
+
+var tbody = document.getElementById("qango6x6").children[0]
+for (c=0;c<tbody.children.length;c++){
+    tr = tbody.children[c]
+    for (t=0;t<tr.children.length;t++){
+        td = tr.children[t];
+        td.setAttribute("onclick", "make_move("+(c*6+t)+")");
+    }
+}
+
+position = new Array(36).fill(0);
+onturn = 2;
+tree = JSON.parse(tree);
+current = tree;
+tree_move = [[current, null]];
+tree_index = 0
+show_moves()
+</script>

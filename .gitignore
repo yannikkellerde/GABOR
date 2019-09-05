@@ -1,0 +1,9 @@
+.vscode/
+proofsets/
+venv/
+__pycache__/
+solver.log
+provenset.txt
+disprovenset.txt
+json/
+gctest.py
