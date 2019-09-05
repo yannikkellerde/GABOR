@@ -6,6 +6,7 @@ There are two different versions of Qango, the 6x6 version and the 7x7 version. 
 1. A 5 stone row, horizontally, vertically or diagonally
 2. A 2x2 square
 3. 3 contiguous squares of the same color (The Qango board is colored, click [here](yannikkeller.de/game_solver/page/playme.html) to check out the color patterns)
+
 As for advanced players, it becomes very obvious, that the game is winning for the first player in it's normal state, there is and additional Rule for advanced players called [Burgregel](http://qango.de/index.html?page=fortgeschrittene&language=deutsch). With this Rule, the first player isn't allowed to occupy the 4 squares in the center or the 4 squares in the 2-2 position in the first move (check out the black X-es in the beginning of the game when playing on [yannikkeller.de](yannikkeller.de/game_solver/page/playme.html)).
 A long time ago, I had already suspected, that the game would still be a first player win, even when using the *Burgregel*. In fact, I was able to finally proof it using this software.
 
@@ -21,5 +22,5 @@ When I then implemented the basic version of the Proof-Number search algorithm, 
 Feel free to clone this repository and check out the code yourself, but be warned: As I implemented the code just for myself, I didn't do any documentation or commenting and the code will probably be very hard to understand for someone, who has not implemented it himself.
 
 ## Further work
-As some other Qango players have also figured out, that the *Burgregel* is still a first player win, on some of the Qango tournaments, they have started to play with the inofficial *6x6 Profiregel*. Here the first player has to start on the edge of the board. It would be interesting to find out the game theoretical value of this way to play.
+As some other Qango players have also figured out, that the *Burgregel* is still a first player win. At some of the Qango tournaments, they have started to play with the inofficial *6x6 Profiregel*. Here the first player has to start on the edge of the board. It would be interesting to find out the game theoretical value of this way to play.
 Also, there is still the 7x7 version of the game, I haven't touched yet at all. As solving 6x6 Qango is much easier, as solving 7x7 Qango, this will probably only be possible with a better Computer and a memory efficient in C++. Also, I might need to look into some more sophisticated approaches as [PN²](https://www.researchgate.net/publication/292699512_The_PN2-search_algorithm) or PDS-PN.
