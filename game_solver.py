@@ -175,17 +175,18 @@ class PN_DAG():
 
     def pn_search(self):
         self.game.reset()
+        self.game.set_state([(1<<8)|(1<<13)|(1<<21),(1<<2)|(1<<14)|(1<<19)], True)
         self.root = Node(self.game.onturn, tuple(self.game.position), None, 1, 1)
         self.root.parents = []
         self.node_count += 1
         self.ttable[self.game.hashpos()] = self.root
-        util.buildupnodestruct(Node, [1<<2], self.root, self.game, self.ttable)
+        # util.buildupnodestruct(Node, [1<<2, 1<<12], self.root, self.game, self.ttable)
         # util.buildupnodestruct(Node,[1<<8, 1<<15, 1<<14, 1<<13, 1<<28],self.root,self.game,self.ttable)
         c = 1
         while self.root.pn!=0 and self.root.dn!=0:
             if c % 1000 == 0:
-                print(self.node_count, " ".join([str(x.pn) for x in self.root.children[0].children]))
-                print(self.node_count, " ".join([str(x.dn) for x in self.root.children[0].children]))
+                print(self.node_count, " ".join([str(x.pn) for x in self.root.children]))
+                print(self.node_count, " ".join([str(x.dn) for x in self.root.children]))
                 if c % 100000 == 0:
                     gc.collect()
                 print("Proofadds: {}".format(self.proofadds))

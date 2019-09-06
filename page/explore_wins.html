@@ -7,8 +7,8 @@
 </head>
 
 <body>
-<script type="text/javascript" src="../json/provenset.js"></script>
-<script type="text/javascript" src="../json/disprovenset.js"></script>
+<script type="text/javascript" src="../json/provenset_profiregel.js"></script>
+<script type="text/javascript" src="../json/disprovenset_profiregel.js"></script>
 <table id="qango6x6">
     <tbody>
         <tr>
@@ -241,7 +241,7 @@ function show_moves(){
     for (var i=0;i<miteval.length;i++){
         var move = miteval[i][0];
         var evaluation = miteval[i][1];
-        var evalconvert = ["Unknown","Black wins","White wins"]
+        var evalconvert = ["Unknown","Black wins or draw","White wins"]
         var tr = document.createElement("tr");
         var move_elem = document.createElement("td");
         var eval_elem = document.createElement("td");

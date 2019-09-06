@@ -3,7 +3,7 @@ proofsets/
 venv/
 __pycache__/
 solver.log
-provenset.txt
-disprovenset.txt
+*.txt
 json/
 gctest.py
+*.pyc
