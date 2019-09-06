@@ -7,8 +7,8 @@ There are two different versions of Qango, the 6x6 version and the 7x7 version. 
 2. A 2x2 square
 3. 3 contiguous squares of the same color (The Qango board is colored, click [here](yannikkeller.de/game_solver/page/playme.html) to check out the color patterns)
 
-As for advanced players, it becomes very obvious, that the game is winning for the first player in it's normal state, there is and additional Rule for advanced players called [Burgregel](http://qango.de/index.html?page=fortgeschrittene&language=deutsch). With this Rule, the first player isn't allowed to occupy the 4 squares in the center or the 4 squares in the 2-2 position in the first move (check out the black X-es in the beginning of the game when playing on [yannikkeller.de](yannikkeller.de/game_solver/page/playme.html)).
-A long time ago, I had already suspected, that the game would still be a first player win, even when using the *Burgregel*. In fact, I was able to finally proof it using this software.
+As for advanced players, it becomes very obvious, that the game is winning for the first player in it's normal state, there is an additional Rule for advanced players called [Burgregel](http://qango.de/index.html?page=fortgeschrittene&language=deutsch). With this Rule, the first player isn't allowed to occupy the 4 squares in the center or the 4 squares in the 2-2 position in the first move (check out the black X-es in the beginning of the game when playing on [yannikkeller.de](yannikkeller.de/game_solver/page/playme.html)).
+A long time ago, I had already suspected, that the game would still be a first player win, even when using the *Burgregel*. In fact, I was able to finally proove it using this software.
 
 ## Implementation
 I implemented the Software in Python3, because Python is just such an easy to use high level language I love to use for just about any problem. Looking at it afterwards, I have to admit, that this was probably not the best decision to make. As Python is such a high level language, efficient working memory handeling is very hard in Python. As this is most limiting factor to the Proof-Number search, this is a real problem. In hindsight, it would probably have been a better choice to choose a lower level Language like C++.
@@ -18,7 +18,7 @@ When I then implemented the basic version of the Proof-Number search algorithm, 
 2. **Move ordering:** In Qango, the squares in the center, are much more likely to be usefull to occupy, than the squares in the corner. So it was important to make sure, that when there is a tie in the Proof-Number of two nodes, the algorithm first checks out the move closer to the center.
 3. **Deleting proven nodes:** Using above techniques, I was already able to solve the basic version of the Game in just a few seconds, but when trying with the *Burgregel*, I still ran out of memory. So I make use of a technique first described by Victor Allis and deleted all Nodes that where already proven from the game tree. The hash of their position is stored in either the *provenset* or the *disprovenset*, so I don't have to evaluate the positions again, when I reach them.
 
-## You wan't to clone this repository
+## If you wan't to clone this repository
 Feel free to clone this repository and check out the code yourself, but be warned: As I implemented the code just for myself, I didn't do any documentation or commenting and the code will probably be very hard to understand for someone, who has not implemented it himself.
 
 ## Further work
