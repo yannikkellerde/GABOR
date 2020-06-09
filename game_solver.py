@@ -114,10 +114,11 @@ class PN_DAG():
             self.delete_node(n, n.parents, n.children)
 
     def select_most_proving(self, n):
+        depth = 0
         while n.children:
             val = math.inf
             best = None
-            if n.myturn:
+            if n.myturn or depth==0:
                 for c in n.children:
                     if val > c.pn:
                         best = c
@@ -129,6 +130,7 @@ class PN_DAG():
                         val = c.dn
             oldn = n
             n = best
+            depth += 1
         return n
 
     def evaluate(self, hashval, move, n):
@@ -175,7 +177,7 @@ class PN_DAG():
 
     def pn_search(self):
         self.game.reset()
-        self.game.set_state([(1<<8)|(1<<13)|(1<<21),(1<<2)|(1<<14)|(1<<19)], True)
+        self.game.set_state([(1<<8),(1<<2)|(1<<20)], False)
         self.root = Node(self.game.onturn, tuple(self.game.position), None, 1, 1)
         self.root.parents = []
         self.node_count += 1

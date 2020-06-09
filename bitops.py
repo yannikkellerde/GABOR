@@ -89,7 +89,6 @@ class encoder():
             shifted <<=1
         return res
 
-
 class bitops():
     def __init__(self):
         self.bit_reverser = bit_reverser()
@@ -113,3 +112,6 @@ class bitops():
     
     def pmirrory(self, p):
         return [self.mirrory(p[0]), self.mirrory(p[1])]
+
+def get_least_significant_set_bit(x):
+    return (x&-x).bit_length()-1

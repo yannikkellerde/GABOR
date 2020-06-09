@@ -1,5 +1,26 @@
 from qango6x6 import Quango6x6
+from patterns_game import Patterns_Game,convert_into_patterns_game
 
+def test_pg():
+      q = Quango6x6()
+      pos1 = [
+        int("0b000001"
+              "010010"
+              "100000"
+              "011110"
+              "010000"
+              "000010",2),
+        int("0b000010"
+              "000001"
+              "010010"
+              "100001"
+              "010000"
+              "100001",2),
+      ]
+      q.set_state(pos1, True)
+      pg = convert_into_patterns_game(q)
+      pg.sort_myself()
+      print(pg)
 def testfull():
     q=Quango6x6()
     pos1 = [
@@ -183,3 +204,6 @@ def teshash():
         q.position=p
         return q.hashpos()
     print([dohash(p) for p in poses])
+
+if __name__=='__main__':
+      test_pg()
