@@ -1,21 +1,22 @@
 import math
 from that_kind_of_game import Game
-from util import findfivers, findsquares, getwinhash, test_game, show_all_wins
+from util import findfivers, findsquares, getwinhash, test_game, show_all_wins,remove_useless_wsn
 from bitops import bitops
 from functools import reduce
 
 class Quango6x6(Game):
     def __init__(self):
-        self.winsquarenums = [
-            [0,1,6],[4,5,11],[24,30,31],[29,34,35],
-            [2,7,12],[3,10,17],[18,25,32],[23,28,33],
-            [8,13,14],[9,15,16],[19,20,26],[21,22,27]
-        ]
+        self.winsquarenums = {
+            frozenset({0,1,6}),frozenset({4,5,11}),frozenset({24,30,31}),frozenset({29,34,35}),
+            frozenset({2,7,12}),frozenset({3,10,17}),frozenset({18,25,32}),frozenset({23,28,33}),
+            frozenset({8,13,14}),frozenset({9,15,16}),frozenset({19,20,26}),frozenset({21,22,27})
+        }
         self.squares = 36
         self.bitops = bitops()
         self.per_row = int(math.sqrt(self.squares))
-        self.winsquarenums.extend(findsquares(self.squares))
-        self.winsquarenums.extend(findfivers(self.squares))
+        self.winsquarenums.update(findsquares(self.squares))
+        self.winsquarenums.update(findfivers(self.squares))
+        remove_useless_wsn(self.winsquarenums)
         self.winpatterns = list(map(lambda x:reduce(lambda y,z:y|z, list(map(lambda a:2**a, x))), self.winsquarenums))
         self.winhash = getwinhash(self.winpatterns, self.squares)
         self.reset()
@@ -31,6 +32,9 @@ class Quango6x6(Game):
         self.sortfunc = lambda x:self.sortlist.index(x)
 
     def get_actions(self):
+        pass #TODO
+
+    def get_actions_simple(self):
         actions = super().get_actions()
         return sorted(actions, key=self.sortfunc)
 

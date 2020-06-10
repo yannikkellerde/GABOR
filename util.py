@@ -2,26 +2,33 @@ import math
 import psutil
 
 def findsquares(squares):
-    winsquarenums = []
+    winsquarenums = set()
     perrow = int(math.sqrt(squares))
     for s in range(squares-perrow-1):
         if s % perrow != perrow-1:
-            winsquarenums.append([s,s+1,s+6,s+7])
+            winsquarenums.add(frozenset({s,s+1,s+6,s+7}))
     return winsquarenums
 
+def remove_useless_wsn(winsquarenums):
+    discardos = set()
+    for ws1 in winsquarenums:
+        for ws2 in winsquarenums:
+            if ws1!=ws2 and ws1.issubset(ws2):
+                discardos.add(ws2)
+    for d in discardos:
+        winsquarenums.discard(d)
 def findfivers(squares):
-    winsquarenums = []
+    winsquarenums = set()
     perrow = int(math.sqrt(squares))
     for s in range(squares):
         if perrow - (s % perrow) >= 5:
-            winsquarenums.append([s,s+1,s+2,s+3,s+4])
+            winsquarenums.add(frozenset({s,s+1,s+2,s+3,s+4}))
             if perrow - (s // perrow) >= 5:
-                winsquarenums.append([s,s+7,s+14,s+21,s+28])
+                winsquarenums.add(frozenset({s,s+7,s+14,s+21,s+28}))
         if perrow - (s // perrow) >= 5:
-            winsquarenums.append([s,s+6,s+12,s+18,s+24])
+            winsquarenums.add(frozenset({s,s+6,s+12,s+18,s+24}))
             if (s % perrow) >= 4:
-                winsquarenums.append([s,s+5,s+10,s+15,s+20])
-
+                winsquarenums.add(frozenset({s,s+5,s+10,s+15,s+20}))
     return winsquarenums
 
 def buildupnodestruct(Node, moves, root, game, ttable):

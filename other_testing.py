@@ -6,5 +6,6 @@ def showpos(p):
 	test_game(q)
 
 game = Quango6x6()
-game.set_state([(1<<8),(1<<2)|(1<<20)], True)
-showpos(game.position)
+print(len(game.winsquarenums))
+#game.set_state([(1<<8),(1<<2)|(1<<20)], True)
+#showpos(game.position)

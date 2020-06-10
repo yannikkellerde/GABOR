@@ -77,6 +77,7 @@ def swap(n, p, q, bitp, bitq):
     return n
 
 def convert_into_patterns_game(game:Game):
+    # TODO: Filter out winpatterns that need exactly same squares to win.
     winpatterns = []
     all_bits = set()
     for winpattern in game.winpatterns:
