@@ -6,7 +6,8 @@ import sys
 import gc
 import time
 
-game = Quango6x6()
+startpos = [[407423052, 8634042242], True]
+game = Quango6x6(startpos)
 solver = PN_DAG(game)
 solver.loadsets()
 while 1:

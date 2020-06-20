@@ -5,7 +5,8 @@ from bitops import bitops
 from functools import reduce
 
 class Quango6x6(Game):
-    def __init__(self):
+    def __init__(self,startpos = [[0,0],True]):
+        self.startpos = startpos
         self.winsquarenums = {
             frozenset({0,1,6}),frozenset({4,5,11}),frozenset({24,30,31}),frozenset({29,34,35}),
             frozenset({2,7,12}),frozenset({3,10,17}),frozenset({18,25,32}),frozenset({23,28,33}),
@@ -31,8 +32,40 @@ class Quango6x6(Game):
         self.fullness = (1<<36)-1
         self.sortfunc = lambda x:self.sortlist.index(x)
 
+    def reset(self):
+        self.position, self.onturn = self.startpos
+
     def get_actions(self):
-        pass #TODO
+        """
+        Filter all squares, that do not correspond to any viable winnig patterns and
+        then sort them based on the amount of winning patterns they correspond to.
+        """
+        def set_map(square):
+            match_pats = set()
+            for winpat in viable_winpatterns:
+                if winpat&square:
+                    match_pats.add(winpat)
+            return match_pats
+        free_squares = super().get_actions()
+        viable_winpatterns = list(filter(lambda x:not (x&self.position[0] and x&self.position[1]),self.winpatterns))
+        square_winpats = [(set_map(x),x) for x in free_squares]
+        square_winpats.sort(key=lambda x:-len(x[0]))
+        andiefront = []
+        for i in range(len(square_winpats)-1,-1,-1):
+            myset = square_winpats[i]
+            if len(myset[0])==0:
+                del square_winpats[i]
+            elif len(myset[0])==1:
+                wp, = myset[0]
+                if not ((wp^myset[1])^(wp&self.position[0]) and (wp^myset[1])^(wp&self.position[1])):
+                    andiefront.append(myset[1])
+                del square_winpats[i]
+            else:
+                for j in range(i):
+                    if myset[0].issubset(square_winpats[j][0]):
+                        del square_winpats[i]
+                        break
+        return andiefront + [x[1] for x in square_winpats]
 
     def get_actions_simple(self):
         actions = super().get_actions()

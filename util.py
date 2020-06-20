@@ -52,8 +52,8 @@ def getwinhash(winpatterns, squares):
     return winhash
 
 def draw_board(pos, squares):
-    outstr=""
     rowsquares = math.sqrt(squares)
+    outstr=((int(rowsquares)+2)*"#")+"\n#"
     for i in range(squares):
         if pos[0]&(2**i):
             outstr+="O"
@@ -62,7 +62,8 @@ def draw_board(pos, squares):
         else:
             outstr+=" "
         if i%rowsquares==rowsquares-1:
-            outstr+="\n"
+            outstr+="#\n#"
+    outstr+=(int(rowsquares)+1)*"#"
     print(outstr)
 
 def show_all_wins(game):
@@ -76,6 +77,7 @@ def test_game(game):
         draw_board(game.position, game.squares)
         print("choose one of the following actions")
         print(",".join(map(lambda x:str(int(math.log2(x))), game.get_actions())))
+        #print(",".join(map(lambda x:str(int(math.log2(x))), game.get_actions_simple())))
         a = input()
         win = game.make_move(2**int(a))
         if win:
@@ -83,6 +85,6 @@ def test_game(game):
 
 def resources_avaliable():
     memory = psutil.virtual_memory()
-    if memory.percent > 95:
+    if memory.percent > 97:
         return False
     return True

@@ -26,6 +26,14 @@ class Game():
             if not (p^self.position[not self.onturn])&p:
                 return True
         return False
+    
+    def check_any_win(self):
+        for p in self.winpatterns:
+            if not (p^self.position[True])&p:
+                return True
+            elif not (p^self.position[False])&p:
+                return False
+        return None
 
     def make_move(self, action):
         self.position[self.onturn] |= action
