@@ -50,22 +50,25 @@ class Mininode():
         self.dn = dn
 
 class PN_DAG():
-    def __init__(self, game):
+    def __init__(self, game, drawproves=True,prooffile="provenset.txt",disprooffile="disprovenset.txt"):
         self.game = game
         self.ttable = {}
         self.provenset = set()
         self.disprovenset = set()
         self.node_count = 0
         self.proofadds = [0,0]
+        self.drawproves = drawproves
+        self.prooffile = prooffile
+        self.disprooffile = disprooffile
 
     def loadsets(self):
         try:
-            with open("provenset.txt","r") as file:
+            with open(self.prooffile,"r") as file:
                 self.provenset = set([int(x) for x in file.read().split(",")[:-1]])
         except Exception as e:
             print(e)
         try:
-            with open("disprovenset.txt","r") as file:
+            with open(self.disprooffile,"r") as file:
                 self.disprovenset = set([int(x) for x in file.read().split(",")[:-1]])
         except Exception as e:
             print(e)
@@ -147,15 +150,15 @@ class PN_DAG():
         if self.game.check_win(move):
             return n.myturn
         if self.game.check_full():
-            return False # To swap when changing direction
+            return self.drawproves
         return None
 
     def expand(self, n):
         self.game.set_state(n.position, n.myturn)
         moves = self.game.get_actions()
         if len(moves)==0:
-            n.pn=math.inf # To swap when changing direction
-            n.dn=0
+            n.pn=0 if self.drawproves else math.inf
+            n.dn=math.inf if self.drawproves else 0
             return
         for move in moves:
             self.game.make_move(move)
@@ -211,7 +214,7 @@ class PN_DAG():
                 if not util.resources_avaliable():
                     return False
             if c%100000==0:
-                save_sets(self.provenset,self.disprovenset)
+                save_sets(self.provenset,self.disprovenset,prooffile=self.prooffile,disprooffile=self.disprooffile)
             c+=1
             most_proving = self.select_most_proving(self.root)
             self.expand(most_proving)
