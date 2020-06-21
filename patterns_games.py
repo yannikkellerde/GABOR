@@ -14,3 +14,5 @@ class Tic_tac_toe(Patterns_Game):
             (1<<2)|(1<<4)|(1<<6)
         ]
         super().__init__(winpatterns,startpos,squares,zobrist_file)
+
+class Qango6x6

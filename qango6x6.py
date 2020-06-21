@@ -4,7 +4,7 @@ from util import findfivers, findsquares, getwinhash, test_game, show_all_wins,r
 from bitops import bitops
 from functools import reduce
 
-class Quango6x6(Game):
+class Qango6x6(Game):
     def __init__(self,startpos = [[0,0],True]):
         self.startpos = startpos
         self.winsquarenums = {
@@ -101,10 +101,10 @@ class Quango6x6(Game):
         return self.bitops.encode(ch)
 
     def __str__(self):
-        return "quango6x6"
+        return "Qango6x6"
 
 if __name__ == "__main__":
-    #test_game(Quango6x6())
-    q = Quango6x6()
+    #test_game(Qango6x6())
+    q = Qango6x6()
     print (q.check_full())
     #show_all_wins(q)

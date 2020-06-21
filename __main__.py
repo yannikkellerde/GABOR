@@ -1,13 +1,13 @@
 from game_solver import PN_DAG, reconstruct_vicory
 from tic_tac_toe import Tic_tac_toe
-from qango6x6 import Quango6x6
+from qango6x6 import Qango6x6
 from data_magic import dump_dict, replacements, save_solution, save_tree_depth, save_sets, save_the_noetigst
 import sys
 import gc
 import time
 
 def do_a_task(task):
-    game = Quango6x6(task[:2])
+    game = Qango6x6(task[:2])
     solver = PN_DAG(game,drawproves=task[2],prooffile=task[3],disprooffile=task[4])
     solver.loadsets()
     while 1:

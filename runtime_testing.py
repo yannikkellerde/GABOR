@@ -1,5 +1,5 @@
 import time
-from qango6x6 import Quango6x6
+from qango6x6 import Qango6x6
 from bitops import bitops
 import numpy as np
 import util
@@ -7,7 +7,7 @@ import random
 import sys
 
 b = bitops()
-q = Quango6x6()
+q = Qango6x6()
 
 pos = [
     int("0b110010001001010001100110001010110100",2),

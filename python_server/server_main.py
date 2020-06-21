@@ -3,7 +3,7 @@ from flask_socketio import emit
 import sys
 sys.path.append("..")
 sys.path.append(".")
-from qango6x6 import Quango6x6
+from qango6x6 import Qango6x6
 import math
 import json
 
@@ -73,7 +73,7 @@ def start_server():
     server = HTTPServer(server_address, Post_handler)
     server.serve_forever()
 
-game = Quango6x6()
+game = Qango6x6()
 with open(sys.argv[1],"r") as f:
     provenset = set(map(int,f.read().split(",")[:-1]))
 with open(sys.argv[2],"r") as f:

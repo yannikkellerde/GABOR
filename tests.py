@@ -1,4 +1,4 @@
-from qango6x6 import Quango6x6
+from qango6x6 import Qango6x6
 from patterns_game import Patterns_Game,convert_into_patterns_game
 from patterns_games import Tic_tac_toe
 from util import draw_board
@@ -7,31 +7,35 @@ import math
 
 def test_tic_tac_toe():
     pos = [
-        int("0b000"
-              "000"
-              "000",2),
-        int("0b000"
-              "000"
-              "000",2)
+        int("0b101"
+              "100"
+              "011",2),
+        int("0b010"
+              "001"
+              "100",2)
     ]
     t = Tic_tac_toe([pos.copy(),True])
-    t.make_move(1<<1)
-    t.make_move(1<<2)
     draw_board(t.position,t.squares)
     hash1 = hash(t)
     print(t.shrink_winpatterns)
     print(str(t))
+    pos = [
+        int("0b100"
+              "001"
+              "110",2),
+        int("0b000"
+              "110"
+              "001",2)
+    ]
     t = Tic_tac_toe([pos.copy(),True])
-    t.make_move(1<<5)
-    t.make_move(1<<8)
     draw_board(t.position,t.squares)
     hash2 = hash(t)
     print(t.shrink_winpatterns)
     print(str(t))
-    print(hash1,hash2)
+    print(hash1==hash2)
 
 def test_get_actions():
-    q = Quango6x6()
+    q = Qango6x6()
     pos1 = [
       int("0b000100"
             "000000"
@@ -64,7 +68,7 @@ def test_get_actions():
     print(sorted([int(round(math.log(x,2))) for x in q.get_actions()]))
     print(q.position)
 def test_pg():
-    q = Quango6x6()
+    q = Qango6x6()
     pos1 = [
       int("0b000001"
             "010010"
@@ -84,7 +88,7 @@ def test_pg():
     pg.sort_myself()
     print(pg)
 def testfull():
-    q=Quango6x6()
+    q=Qango6x6()
     pos1 = [
       int("0b100000"
             "000000"
@@ -119,7 +123,7 @@ def testfull():
     assert q.check_full()==False
 
 def teshash():
-    q=Quango6x6()
+    q=Qango6x6()
     pos1 = [
       int("0b100000"
             "000000"

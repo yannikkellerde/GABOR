@@ -15,9 +15,9 @@ class Patterns_Game(Game):
         self.fullness = (1<<self.squares)-1
         super().reset()
         self.winpatterns = winpatterns
-        self.clean_winpatterns_and_aval(self.winpatterns)
         self.orig_winhash,self.pat_to_square = getwinhash(self.winpatterns, self.squares)
         self.reset()
+        self.clean_winpatterns_and_aval(self.winpatterns)
         self.history = []
         self.zobrist_file = zobrist_file
         self.init_zobrist()
@@ -101,6 +101,7 @@ class Patterns_Game(Game):
                 if binsquare&wp:
                     h ^= self.win_pattern_bitstrings[i,j]
         return int(h)
+
     def shrink_myself(self):
         self.sort_poses = self.position.copy()
         self.winpatterns = set()
@@ -126,21 +127,23 @@ class Patterns_Game(Game):
         self.shrink_winpatterns = out_winpatterns
         self.shrink_squares = curr_index
 
-    def sort_my_winpatterns(self):
+
+
+    def score_winpatterns(self,winpatterns):
         def get_non_uniques(winpattern):
             out = 0
             for wp in self.shrink_winpatterns:
                 if wp!=winpattern:
                     out += bool(wp&winpattern)
             return out
-        def my_sort_func(winpattern):
-            return ((len(get_set_bits(winpattern,self.shrink_squares))-3)*(5**5) +
+        def my_score_func(winpattern):
+            return   ((len(get_set_bits(winpattern,self.shrink_squares))-3)*(5**5) +
                      len(get_set_bits(winpattern&self.sort_poses[0],self.shrink_squares))*(5**4) +
                      len(get_set_bits(winpattern&self.sort_poses[1],self.shrink_squares))*(5**3) +
-                     len(get_set_bits(get_non_uniques(winpattern),self.shrink_squares))*(5**2) +
-                     len(get_set_bits(get_non_uniques(winpattern)&self.sort_poses[0],self.shrink_squares))*5 +
-                     len(get_set_bits(get_non_uniques(winpattern)&self.sort_poses[1],self.shrink_squares)))
-        self.shrink_winpatterns.sort(key=my_sort_func)
+                     get_non_uniques(winpattern)*(5**2) +
+                     get_non_uniques(winpattern&self.sort_poses[0])*5 +
+                     get_non_uniques(winpattern&self.sort_poses[1]))
+        return {x:my_score_func(x) for x in winpatterns}
 
     def sort_myself(self):
         def swapin_bit(old,new,start,target):
@@ -150,26 +153,30 @@ class Patterns_Game(Game):
             else:
                 new |= (old&start_square)<<(target-start)
             return new
-        self.sort_my_winpatterns()
-        sammlo = []
-        for start in range(self.shrink_squares):
-            square = 1<<start
+        def bit_sort_func(bit_pos):
             score = 0
-            for i,wp in enumerate(self.shrink_winpatterns):
-                score += bool(square&wp)*(2**i)*3
-            score += bool(square&self.sort_poses[0])*2
-            score += bool(square&self.sort_poses[1])
-            sammlo.append((score,start))
-        sammlo.sort()
+            bit = 1<<bit_pos
+            if bit&self.sort_poses[0]:
+                score += 1<<36
+            elif bit&self.sort_poses[1]:
+                score += 1<<37
+            wslist = []
+            for wp in self.shrink_winpatterns:
+                if bit&wp:
+                    score += (1<<30)
+                    wslist.append(winscores[wp])
+            score += reduce(lambda x,y:x*y,wslist)
+            return score
+        winscores = self.score_winpatterns(self.shrink_winpatterns)
+        sort_bits = sorted(range(self.shrink_squares),key=bit_sort_func)
         new_pos = [0,0]
         new_winpatterns = [0 for _ in range(len(self.shrink_winpatterns))]
-        for target,(_score,start) in enumerate(sammlo):
+        for target,start in enumerate(sort_bits):
             new_pos[0] = swapin_bit(self.sort_poses[0],new_pos[0],start,target)
             new_pos[1] = swapin_bit(self.sort_poses[1],new_pos[1],start,target)
             for i in range(len(self.shrink_winpatterns)):
                 new_winpatterns[i] = swapin_bit(self.shrink_winpatterns[i],new_winpatterns[i],start,target)
-        for i in range(len(self.shrink_winpatterns)):
-            self.shrink_winpatterns[i] = new_winpatterns[i]
+        self.shrink_winpatterns = sorted(new_winpatterns)
         self.sort_poses = new_pos
 
     def __str__(self):
