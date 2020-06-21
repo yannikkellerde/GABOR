@@ -1,6 +1,34 @@
 from qango6x6 import Quango6x6
 from patterns_game import Patterns_Game,convert_into_patterns_game
+from patterns_games import Tic_tac_toe
+from util import draw_board
+import time
 import math
+
+def test_tic_tac_toe():
+    pos = [
+        int("0b000"
+              "000"
+              "000",2),
+        int("0b000"
+              "000"
+              "000",2)
+    ]
+    t = Tic_tac_toe([pos.copy(),True])
+    t.make_move(1<<1)
+    t.make_move(1<<2)
+    draw_board(t.position,t.squares)
+    hash1 = hash(t)
+    print(t.shrink_winpatterns)
+    print(str(t))
+    t = Tic_tac_toe([pos.copy(),True])
+    t.make_move(1<<5)
+    t.make_move(1<<8)
+    draw_board(t.position,t.squares)
+    hash2 = hash(t)
+    print(t.shrink_winpatterns)
+    print(str(t))
+    print(hash1,hash2)
 
 def test_get_actions():
     q = Quango6x6()
@@ -90,7 +118,6 @@ def testfull():
     q.set_state(pos1, True)
     assert q.check_full()==False
 
-testfull()
 def teshash():
     q=Quango6x6()
     pos1 = [
@@ -240,4 +267,4 @@ def teshash():
     print([dohash(p) for p in poses])
 
 if __name__=='__main__':
-    test_get_actions()
+    test_tic_tac_toe()

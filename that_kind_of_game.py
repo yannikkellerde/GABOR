@@ -1,9 +1,16 @@
 import math
 
 class Game():
+    """Abstract Game class. Do not instantiate"""
+    startpos:list
+    squares:int
+    fullness:int
+    position:list
+    winpatterns:set
+    winhash:dict
+
     def reset(self):
-        self.position = [0,0]
-        self.onturn = True
+        self.position, self.onturn = self.startpos
     
     def set_state(self, position, onturn):
         self.position = list(position)

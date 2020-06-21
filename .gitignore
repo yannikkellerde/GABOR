@@ -7,3 +7,4 @@ solver.log
 json/
 gctest.py
 *.pyc
+old_functions.py

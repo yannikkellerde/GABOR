@@ -8,31 +8,16 @@ from functools import reduce
 import numpy as np
 import pickle
 
-class Hashable_Game(Game):
-    def __init__(self,position,onturn,winhash,orig_winhash,squares):
-        self.position = position
-        self.onturn = onturn
-        self.orig_winhash = orig_winhash
-        self.winhash = deepcopy(winhash)
-        self.squares = squares
-
-    def revert_move(self,move):
-        self.onturn = not self.onturn
-        self.position[self.onturn] ^= move
-        for wp in self.orig_winhash[move]:
-            if wp not in self.winhash[move]:
-                if not (wp&self.position[0] and wp&self.position[1]):
-                    self.winhash[move].add(wp)
-
-class Patterns_Game(Hashable_Game):
-    def __init__(self,winpatterns,startpos,squares,zobrist_file="zobrist_hashs.pkl"):
+class Patterns_Game(Game):
+    def __init__(self,winpatterns,startpos,squares,zobrist_file):
         self.startpos = startpos
         self.squares = squares
-        besetztos = (self.position[0]&self.position[1])
-        self.aval_squares = set(filter(lambda x:not x&besetztos,range(self.squares)))
+        self.fullness = (1<<self.squares)-1
+        super().reset()
         self.winpatterns = winpatterns
+        self.clean_winpatterns_and_aval(self.winpatterns)
         self.orig_winhash,self.pat_to_square = getwinhash(self.winpatterns, self.squares)
-        self.winhash = deepcopy(self.orig_winhash)
+        self.reset()
         self.history = []
         self.zobrist_file = zobrist_file
         self.init_zobrist()
@@ -44,24 +29,31 @@ class Patterns_Game(Hashable_Game):
         self.aval_squares = set(filter(lambda x:not x&besetztos,range(self.squares)))
 
     def get_actions(self):
-        return self.aval_squares
+        return sorted(self.aval_squares,key=lambda x:-len(self.winhash[x]))
 
     def revert_move(self,number=1):
         hist_index = len(self.history)-number
         self.position,self.onturn,self.aval_squares,self.winhash = self.history[hist_index]
         self.history = self.history[:hist_index]
 
+    def clean_winpatterns_and_aval(self,care_patterns):
+        patterns_loosers = set()
+        discardcombos = set()
+        for wp in care_patterns:
+            if (wp&self.position[0] and wp&self.position[1]):
+                for binsquare in self.pat_to_square[wp]:
+                    patterns_loosers.add(binsquare)
+                    discardcombos.add((binsquare,wp))
+        for binsquare,wp in discardcombos:
+            self.winhash[binsquare].discard(wp)
+        self._clean_aval(patterns_loosers)
+
     def make_move(self,action): 
         self.history.append([self.position.copy(),self.onturn,self.aval_squares.copy(),deepcopy(self.winhash)])
         super().make_move(action)
         self.aval_squares.discard(action)
-        patterns_loosers = set()
-        for wp in self.winhash[action]:
-            if (wp&self.position[0] and wp&self.position[1]):
-                for binsquare in self.pat_to_square[wp]:
-                    if binsquare in self.aval_squares:
-                        patterns_loosers.add(binsquare)
-                        self.winhash[binsquare].discard(wp)
+        self.clean_winpatterns_and_aval(self.winhash[action])
+    def _clean_aval(self,patterns_loosers):
         for binsquare in patterns_loosers:
             myset = self.winhash[binsquare]
             mylen = len(myset)
@@ -96,18 +88,33 @@ class Patterns_Game(Hashable_Game):
     def __hash__(self):
         self.shrink_myself()
         self.sort_myself()
-
+        h = 0
+        for j in range(self.shrink_squares):
+            binsquare = 1<<j
+            if binsquare&self.sort_poses[0]:
+                h ^= self.black_square_bitstrings[j]
+            elif binsquare&self.sort_poses[1]:
+                h ^= self.white_square_bitstrings[j]
+            else:
+                h ^= self.empty_square_bitstrings[j]
+            for i,wp in enumerate(self.shrink_winpatterns):
+                if binsquare&wp:
+                    h ^= self.win_pattern_bitstrings[i,j]
+        return int(h)
     def shrink_myself(self):
         self.sort_poses = self.position.copy()
-        self.winpatterns = reduce(lambda x,y:self.winhash[x].update(self.winhash[y]),self.winhash)
+        self.winpatterns = set()
+        for _key,value in self.winhash.items():
+            self.winpatterns.update(value)
+        self.winpatterns = list(self.winpatterns)
         curr_index = 0
         curr_bit = 1
         out_winpatterns = [0 for _ in self.winpatterns]
-        for bit_pos in range(36):
-            if len(self.winhash[bit_pos])==0:
-                continue
+        for bit_pos in range(self.squares):
             bit = 1<<bit_pos
-            for wp in self.winhash[bit_pos]:
+            if len(self.winhash[bit])==0:
+                continue
+            for wp in self.winhash[bit]:
                 index = self.winpatterns.index(wp)
                 out_winpatterns[index] = out_winpatterns[index] | curr_bit
             self.sort_poses[0] = swap(self.sort_poses[0],bit_pos,curr_index,bit,curr_bit)
@@ -116,15 +123,15 @@ class Patterns_Game(Hashable_Game):
             curr_bit = 1<<curr_index
         self.sort_poses[0] = self.sort_poses[0]&(curr_bit-1)
         self.sort_poses[1] = self.sort_poses[1]&(curr_bit-1)
-        self.winpatterns = out_winpatterns
+        self.shrink_winpatterns = out_winpatterns
         self.shrink_squares = curr_index
 
     def sort_my_winpatterns(self):
         def get_non_uniques(winpattern):
             out = 0
-            for wp in self.winpatterns:
+            for wp in self.shrink_winpatterns:
                 if wp!=winpattern:
-                    out |= wp&winpattern
+                    out += bool(wp&winpattern)
             return out
         def my_sort_func(winpattern):
             return ((len(get_set_bits(winpattern,self.shrink_squares))-3)*(5**5) +
@@ -133,7 +140,7 @@ class Patterns_Game(Hashable_Game):
                      len(get_set_bits(get_non_uniques(winpattern),self.shrink_squares))*(5**2) +
                      len(get_set_bits(get_non_uniques(winpattern)&self.sort_poses[0],self.shrink_squares))*5 +
                      len(get_set_bits(get_non_uniques(winpattern)&self.sort_poses[1],self.shrink_squares)))
-        self.winpatterns.sort(key=my_sort_func)
+        self.shrink_winpatterns.sort(key=my_sort_func)
 
     def sort_myself(self):
         def swapin_bit(old,new,start,target):
@@ -148,30 +155,30 @@ class Patterns_Game(Hashable_Game):
         for start in range(self.shrink_squares):
             square = 1<<start
             score = 0
-            for i,wp in enumerate(self.winpatterns):
+            for i,wp in enumerate(self.shrink_winpatterns):
                 score += bool(square&wp)*(2**i)*3
             score += bool(square&self.sort_poses[0])*2
             score += bool(square&self.sort_poses[1])
             sammlo.append((score,start))
         sammlo.sort()
         new_pos = [0,0]
-        new_winpatterns = [0 for _ in range(len(self.winpatterns))]
+        new_winpatterns = [0 for _ in range(len(self.shrink_winpatterns))]
         for target,(_score,start) in enumerate(sammlo):
             new_pos[0] = swapin_bit(self.sort_poses[0],new_pos[0],start,target)
             new_pos[1] = swapin_bit(self.sort_poses[1],new_pos[1],start,target)
-            for i in range(len(self.winpatterns)):
-                new_winpatterns[i] = swapin_bit(self.winpatterns[i],new_winpatterns[i],start,target)
-        for i in range(len(self.winpatterns)):
-            self.winpatterns[i] = new_winpatterns[i]
+            for i in range(len(self.shrink_winpatterns)):
+                new_winpatterns[i] = swapin_bit(self.shrink_winpatterns[i],new_winpatterns[i],start,target)
+        for i in range(len(self.shrink_winpatterns)):
+            self.shrink_winpatterns[i] = new_winpatterns[i]
         self.sort_poses = new_pos
 
     def __str__(self):
         mystr = ""
-        for winpattern in self.winpatterns:
-            mystr+=bin(winpattern)[2:].zfill(self.squares)+"\n"
+        for winpattern in self.shrink_winpatterns:
+            mystr+=bin(winpattern)[2:].zfill(self.shrink_squares)+"\n"
         mystr+="\n"
-        posstrs = [bin(x)[2:].zfill(self.squares) for x in self.position]
-        mystr+="".join(["1" if posstrs[0][i]=="1" else ("2" if posstrs[1][i]=="1" else "0") for i in range(self.squares)])
+        posstrs = [bin(x)[2:].zfill(self.shrink_squares) for x in self.sort_poses]
+        mystr+="".join(["1" if posstrs[0][i]=="1" else ("2" if posstrs[1][i]=="1" else "0") for i in range(self.shrink_squares)])
         return mystr
 
 

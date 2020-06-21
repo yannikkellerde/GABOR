@@ -29,11 +29,8 @@ class Quango6x6(Game):
             1<<1,1<<4,1<<6,1<<11,1<<24,1<<29,1<<31,1<<34,
             1<<0,1<<5,1<<30,1<<35
         ]
-        self.fullness = (1<<36)-1
+        self.fullness = (1<<self.squares)-1
         self.sortfunc = lambda x:self.sortlist.index(x)
-
-    def reset(self):
-        self.position, self.onturn = self.startpos
 
     def get_actions(self):
         """
