@@ -43,13 +43,15 @@ def buildupnodestruct(Node, moves, root, game, ttable):
 
 def getwinhash(winpatterns, squares):
     winhash = {}
+    pat_to_square = {w:set() for w in winpatterns}
     for s in range(squares):
         binsquare = 2**s
-        winhash[binsquare] = []
+        winhash[binsquare] = set()
         for w in winpatterns:
             if (2**s)|w:
-                winhash[binsquare].append(w)
-    return winhash
+                pat_to_square[w].add(binsquare)
+                winhash[binsquare].add(w)
+    return winhash,pat_to_square
 
 def draw_board(pos, squares):
     rowsquares = math.sqrt(squares)

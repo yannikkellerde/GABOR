@@ -19,7 +19,7 @@ class Quango6x6(Game):
         self.winsquarenums.update(findfivers(self.squares))
         remove_useless_wsn(self.winsquarenums)
         self.winpatterns = list(map(lambda x:reduce(lambda y,z:y|z, list(map(lambda a:2**a, x))), self.winsquarenums))
-        self.winhash = getwinhash(self.winpatterns, self.squares)
+        self.winhash,_pat_to_square = getwinhash(self.winpatterns, self.squares)
         self.reset()
         self.sortlist = [
             1<<14,1<<15,1<<20,1<<21,

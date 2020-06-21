@@ -15,7 +15,7 @@ class Tic_tac_toe(Game):
             (2**0)|(2**4)|(2**8),
             (2**2)|(2**4)|(2**6)
         ]
-        self.winhash = getwinhash(self.winpatterns, self.squares)
+        self.winhash,_pat_to_square = getwinhash(self.winpatterns, self.squares)
         self.reset()
 
     def __str__(self):
