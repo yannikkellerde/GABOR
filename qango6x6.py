@@ -14,7 +14,6 @@ class Qango6x6(Game):
         }
         self.squares = 36
         self.bitops = bitops()
-        self.per_row = int(math.sqrt(self.squares))
         self.winsquarenums.update(findsquares(self.squares))
         self.winsquarenums.update(findfivers(self.squares))
         remove_useless_wsn(self.winsquarenums)

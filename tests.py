@@ -1,10 +1,45 @@
-from qango6x6 import Qango6x6
 from patterns_game import Patterns_Game,convert_into_patterns_game
-from patterns_games import Tic_tac_toe
+from patterns_games import Tic_tac_toe, Qango6x6
 from util import draw_board
 import time
 import math
 
+def test_patterns_qango():
+    pos1 = [
+      int("0b001000"
+            "000000"
+            "000000"
+            "000000"
+            "000100"
+            "000000",2),
+      int("0b000001"
+            "001000"
+            "000000"
+            "000000"
+            "000000"
+            "000100",2),
+    ]
+    pos2 = [
+      int("0b000000"
+            "000000"
+            "100000"
+            "000010"
+            "000000"
+            "000000",2),
+      int("0b000000"
+            "000000"
+            "010000"
+            "000001"
+            "000000"
+            "100000",2),
+    ]
+    q1 = Qango6x6([pos1.copy(),True])
+    q2 = Qango6x6([pos2.copy(),True])
+    start = time.perf_counter()
+    draw_board(q1.position,q1.squares)
+    draw_board(q2.position,q2.squares)
+    print(hash(q1)==hash(q2))
+    print(time.perf_counter()-start)
 def test_tic_tac_toe():
     pos = [
         int("0b101"
@@ -271,4 +306,4 @@ def teshash():
     print([dohash(p) for p in poses])
 
 if __name__=='__main__':
-    test_tic_tac_toe()
+    test_patterns_qango()

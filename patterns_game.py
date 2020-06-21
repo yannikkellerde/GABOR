@@ -83,7 +83,7 @@ class Patterns_Game(Game):
 
     def init_zobrist(self):
         with open(self.zobrist_file,'rb') as f:
-            self.white_square_bitstrings,self.black_square_bitstrings,self.empty_square_bitstrings,self.win_pattern_bitstrings = pickle.load(f)
+            self.white_square_bitstrings,self.black_square_bitstrings,self.empty_square_bitstrings,self.win_pattern_bitstrings,self.pattern_score_bitstrings = pickle.load(f)
 
     def __hash__(self):
         self.shrink_myself()
@@ -133,16 +133,15 @@ class Patterns_Game(Game):
         def get_non_uniques(winpattern):
             out = 0
             for wp in self.shrink_winpatterns:
-                if wp!=winpattern:
-                    out += bool(wp&winpattern)
+                if wp!=winpattern and wp&winpattern:
+                    out += 1 + set_bits_count[wp][0]+5*set_bits_count[wp][1]
             return out
         def my_score_func(winpattern):
-            return   ((len(get_set_bits(winpattern,self.shrink_squares))-3)*(5**5) +
-                     len(get_set_bits(winpattern&self.sort_poses[0],self.shrink_squares))*(5**4) +
-                     len(get_set_bits(winpattern&self.sort_poses[1],self.shrink_squares))*(5**3) +
-                     get_non_uniques(winpattern)*(5**2) +
-                     get_non_uniques(winpattern&self.sort_poses[0])*5 +
-                     get_non_uniques(winpattern&self.sort_poses[1]))
+            return   (self.pattern_score_bitstrings[(len(get_set_bits(winpattern,self.shrink_squares))-3)] ^
+                     self.pattern_score_bitstrings[set_bits_count[winpattern][0]+10] ^
+                     self.pattern_score_bitstrings[set_bits_count[winpattern][1]+20] ^
+                     self.pattern_score_bitstrings[(get_non_uniques(winpattern)+30)%len(self.pattern_score_bitstrings)])
+        set_bits_count = {x:(len(get_set_bits(x&self.sort_poses[0],self.shrink_squares)),len(get_set_bits(x&self.sort_poses[1],self.shrink_squares))) for x in winpatterns}
         return {x:my_score_func(x) for x in winpatterns}
 
     def sort_myself(self):
@@ -157,15 +156,15 @@ class Patterns_Game(Game):
             score = 0
             bit = 1<<bit_pos
             if bit&self.sort_poses[0]:
-                score += 1<<36
+                score += 1<<46
             elif bit&self.sort_poses[1]:
-                score += 1<<37
+                score += 1<<47
             wslist = []
             for wp in self.shrink_winpatterns:
                 if bit&wp:
-                    score += (1<<30)
+                    score += (1<<40)
                     wslist.append(winscores[wp])
-            score += reduce(lambda x,y:x*y,wslist)
+            score += reduce(lambda x,y:x^y,wslist)
             return score
         winscores = self.score_winpatterns(self.shrink_winpatterns)
         sort_bits = sorted(range(self.shrink_squares),key=bit_sort_func)
