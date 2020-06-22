@@ -114,21 +114,16 @@ class PN_DAG():
         if n.pn == old_pn and n.dn == old_dn and n.pn!=0 and n.dn!=0:
             return
         ps = n.parents[:]
-        if n.position == (4296289024, 50872372):
-            for child in n.children:
-                if child.pn == 0:
-                    print(child.position)
         for p in ps:
             self.update_anchestors(p)
         if (n.pn == 0 or n.dn == 0) and len(n.parents)>0:
             self.delete_node(n, n.parents, n.children)
 
     def select_most_proving(self, n):
-        depth = 0
         while n.children:
             val = math.inf
             best = None
-            if n.myturn or depth==0:
+            if n.myturn:
                 for c in n.children:
                     if val > c.pn:
                         best = c
@@ -139,7 +134,6 @@ class PN_DAG():
                         best = c
                         val = c.dn
             n = best
-            depth += 1
         return n
 
     def evaluate(self, hashval, move, n):
@@ -214,7 +208,7 @@ class PN_DAG():
                 if not util.resources_avaliable():
                     return False
             if c%100000==0:
-                save_sets(self.provenset,self.disprovenset,prooffile=self.prooffile,disprooffile=self.disprooffile)
+                save_sets((self.provenset,self.prooffile),(self.disprovenset,self.disprooffile))
             c+=1
             most_proving = self.select_most_proving(self.root)
             self.expand(most_proving)

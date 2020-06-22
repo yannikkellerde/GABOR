@@ -4,7 +4,36 @@ from util import findfivers, findsquares, getwinhash, test_game, show_all_wins,r
 from bitops import bitops
 from functools import reduce
 
-class Qango6x6(Game):
+class Qango6x6_base(Game):
+    bitops:bitops
+    squares:int
+
+    def get_symetries(self, pos):
+            t = self.bitops.ptranspose(pos)
+            r = self.bitops.preverse(pos)
+            syms = [pos,
+                    self.bitops.pmirrorx(pos),
+                    self.bitops.pmirrory(pos),
+                    r, # rotate by 180 deg
+                    t, # mirror on topleft to bottomright diagonal
+                    self.bitops.ptranspose(r), # mirror on bottomleft to topright diagonal
+                    self.bitops.pmirrorx(t), # rotate by 90 deg
+                    self.bitops.pmirrory(t) # rotate by 270 deg
+            ]
+            return syms
+
+    def hashpos(self):
+        syms = self.get_symetries(self.position)
+        ch = None
+        low = math.inf
+        for p in syms:
+            com = (p[0]<<self.squares)|p[1]
+            if com < low:
+                low = com
+                ch = p
+        return self.bitops.encode(ch)
+
+class Qango6x6(Qango6x6_base):
     def __init__(self,startpos = [[0,0],True]):
         self.startpos = startpos
         self.winsquarenums = {
@@ -67,37 +96,12 @@ class Qango6x6(Game):
         actions = super().get_actions()
         return sorted(actions, key=self.sortfunc)
 
-    def get_symetries(self, pos):
-        t = self.bitops.ptranspose(pos)
-        r = self.bitops.preverse(pos)
-        syms = [pos,
-                self.bitops.pmirrorx(pos),
-                self.bitops.pmirrory(pos),
-                r, # rotate by 180 deg
-                t, # mirror on topleft to bottomright diagonal
-                self.bitops.ptranspose(r), # mirror on bottomleft to topright diagonal
-                self.bitops.pmirrorx(t), # rotate by 90 deg
-                self.bitops.pmirrory(t) # rotate by 270 deg
-        ]
-        return syms
-
     def extract_move(self, nextpos):
         syms = self.get_symetries(nextpos)
         for p in syms:
             xored = p[self.onturn]^self.position[self.onturn]
             if p[not self.onturn] == self.position[not self.onturn] and (xored in self.sortlist):
                 return xored
-
-    def hashpos(self):
-        syms = self.get_symetries(self.position)
-        ch = None
-        low = math.inf
-        for p in syms:
-            com = (p[0]<<self.squares)|p[1]
-            if com < low:
-                low = com
-                ch = p
-        return self.bitops.encode(ch)
 
     def __str__(self):
         return "Qango6x6"

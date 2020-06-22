@@ -80,13 +80,11 @@ def save_solution(node, file, game, parent_pos):
             alr = True
     file.write("]}")
 
-def save_sets(provenset,disprovenset,prooffile="provenset.txt",disprooffile="disprovenset.txt"):
-    with open(disprooffile,"w") as file:
-        for d in disprovenset:
-            file.write(str(d)+",")
-    with open(prooffile,"w") as file:
-        for p in provenset:
-            file.write(str(p)+",")
+def save_sets(*sets_with_file):
+    for ps,pf in sets_with_file:
+        with open(pf,"w") as file:
+            for d in ps:
+                file.write(str(d)+",")
 
 def save_tree_depth(node, file, game, parent_pos, depth, maxdepth):
     if parent_pos is None:

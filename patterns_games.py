@@ -1,4 +1,5 @@
 from patterns_game import Patterns_Game
+from qango6x6 import Qango6x6_base
 from util import findfivers, findsquares, remove_useless_wsn
 from functools import reduce
 
@@ -17,7 +18,10 @@ class Tic_tac_toe(Patterns_Game):
         ]
         super().__init__(winpatterns,startpos,squares,zobrist_file)
 
-class Qango6x6(Patterns_Game):
+    def basic_hash(self):
+        return hash(self)
+
+class Qango6x6(Patterns_Game,Qango6x6_base):
     def __init__(self,startpos=[[0,0],True],zobrist_file="zobrist_qango6x6.pkl"):
         squares = 36
         self.winsquarenums = {
@@ -30,3 +34,6 @@ class Qango6x6(Patterns_Game):
         remove_useless_wsn(self.winsquarenums)
         winpatterns = list(map(lambda x:reduce(lambda y,z:y|z, list(map(lambda a:2**a, x))), self.winsquarenums))
         super().__init__(winpatterns,startpos,squares,zobrist_file)
+
+    def basic_hash(self):
+        return super().hashpos()
