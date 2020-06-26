@@ -12,7 +12,7 @@ def test_patterns_qango():
             "000000"
             "000100"
             "000000",2),
-      int("0b000001"
+      int("0b100000"
             "001000"
             "000000"
             "000000"
@@ -35,14 +35,14 @@ def test_patterns_qango():
     ]
     q1 = Qango6x6([pos1.copy(),True])
     q2 = Qango6x6([pos2.copy(),True])
-    start = time.perf_counter()
     draw_board(q1.position,q1.squares)
     draw_board(q2.position,q2.squares)
+    start = time.perf_counter()
     print(hash(q1)==hash(q2))
     print(time.perf_counter()-start)
 def test_tic_tac_toe():
     pos = [
-        int("0b101"
+        int("0b001"
               "100"
               "011",2),
         int("0b010"
@@ -52,8 +52,6 @@ def test_tic_tac_toe():
     t = Tic_tac_toe([pos.copy(),True])
     draw_board(t.position,t.squares)
     hash1 = hash(t)
-    print(t.shrink_winpatterns)
-    print(str(t))
     pos = [
         int("0b100"
               "001"
@@ -65,8 +63,6 @@ def test_tic_tac_toe():
     t = Tic_tac_toe([pos.copy(),True])
     draw_board(t.position,t.squares)
     hash2 = hash(t)
-    print(t.shrink_winpatterns)
-    print(str(t))
     print(hash1==hash2)
 
 def test_get_actions():
@@ -306,4 +302,4 @@ def teshash():
     print([dohash(p) for p in poses])
 
 if __name__=='__main__':
-    test_patterns_qango()
+    test_tic_tac_toe()

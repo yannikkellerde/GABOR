@@ -71,7 +71,10 @@ class PN_search():
 
     def delete_node(self, n, ps, ch, depth):
         for p in ps:
-            p[CHILDREN].remove(n)
+            for i in range(len(p[CHILDREN])):
+                if p[CHILDREN][i][1]==n:
+                    del p[CHILDREN][i]
+                    break
         for _,c in ch:
             if len(c)>PARENTS:
                 c[PARENTS].remove(n)
@@ -110,12 +113,12 @@ class PN_search():
             adepth = self.update_anchestors(p,depth-1)
             if adepth<mindepth:
                 mindepth = adepth
-        if (n[PN] == 0 or n[DN] == 0) and len(n[PARENTS])>0:
+        if (n[PN] == 0 or n[DN] == 0) and len(n)>PARENTS:
             self.delete_node(n, n[PARENTS], n[CHILDREN],depth)
         return mindepth
 
     def select_most_proving(self, n, depth):
-        path = [n]
+        path = []
         while n[CHILDREN]:
             val = math.inf
             best = None
@@ -159,17 +162,18 @@ class PN_search():
         for move in moves:
             self.game.make_move(move)
             hashval = self.game.basic_hash() if childdepth<self.endgame_depth else hash(self.game)
-            if not hashval in knownhashvals:
-                if hashval in use_ttable:
-                    found = use_ttable[hashval]
-                    found[PARENTS].append(n)
-                    n[CHILDREN].append((move,found))
-                    self.game.revert_move(1)
-                    continue
+            if hashval in knownhashvals:
+                continue
+            if hashval in use_ttable:
+                found = use_ttable[hashval]
+                found[PARENTS].append(n)
+                n[CHILDREN].append((move,found))
+                self.game.revert_move(1)
+                continue
             knownhashvals.add(hashval)
             res = self.evaluate(hashval, move, n, childdepth)
             if res is None:
-                child = [1,1,hashval,[n],{}]
+                child = [1,1,hashval,[n],[]]
                 use_ttable[hashval]=child
             else:
                 if res:
@@ -193,7 +197,7 @@ class PN_search():
         else:
             hashval = hash(self.game)
             use_ttable = self.ttable_endgame
-        self.root = [1,1,hashval,[],{}]
+        self.root = [1,1,hashval,[],[]]
         self.node_count += 1
         use_ttable[hashval] = self.root
         curr_path = [self.root]
@@ -217,8 +221,9 @@ class PN_search():
             most_proving = curr_path[-1]
             self.expand(most_proving,depth)
             new_depth = self.update_anchestors(most_proving,depth)
-            self.game.revert_move(number=depth-new_depth)
             if new_depth < depth:
+                self.game.revert_move(number=depth-new_depth)
                 curr_path = curr_path[:new_depth-depth]
+            depth = new_depth
         print(self.root[PN], self.root[DN], self.node_count)
         return True

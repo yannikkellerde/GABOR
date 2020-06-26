@@ -4,7 +4,7 @@ from util import findfivers, findsquares, remove_useless_wsn
 from functools import reduce
 
 class Tic_tac_toe(Patterns_Game):
-    def __init__(self,startpos=[[0,0],True],zobrist_file="zobrist_tik_tac_toe.pkl"):
+    def __init__(self,startpos=[[0,0],True],zobrist_file="zobrist.pkl"):
         squares = 9
         winpatterns = [
             (1<<0)|(1<<1)|(1<<2),
@@ -22,7 +22,7 @@ class Tic_tac_toe(Patterns_Game):
         return hash(self)
 
 class Qango6x6(Patterns_Game,Qango6x6_base):
-    def __init__(self,startpos=[[0,0],True],zobrist_file="zobrist_qango6x6.pkl"):
+    def __init__(self,startpos=[[0,0],True],zobrist_file="zobrist.pkl"):
         squares = 36
         self.winsquarenums = {
             frozenset({0,1,6}),frozenset({4,5,11}),frozenset({24,30,31}),frozenset({29,34,35}),
