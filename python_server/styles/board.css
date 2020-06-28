@@ -1,4 +1,4 @@
-#qango6x6{
+#board{
     position: absolute;
     width: 750px;
     height: 750px;
@@ -8,11 +8,11 @@
     table-layout: fixed;
 }
 
-#qango6x6 tr{
+#board tr{
     height:125px;
 }
 
-#qango6x6 td{
+#board td{
     width:125px;
     text-align: center;
     font-size: 82px;

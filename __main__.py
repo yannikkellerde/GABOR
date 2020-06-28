@@ -1,8 +1,11 @@
 from solve_patterns_game import PN_search
 from patterns_games import Tic_tac_toe
 from data_magic import save_sets
+import os
 
 def do_a_task(task):
+    if not os.path.exists(os.path.dirname(task["solver_args"]["prooffile"])):
+        os.makedirs(os.path.dirname(task["solver_args"]["prooffile"]))
     game = Tic_tac_toe(**task["game_args"])
     solver = PN_search(game,**task["solver_args"])
     solver.pn_search()

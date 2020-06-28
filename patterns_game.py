@@ -23,6 +23,13 @@ class Patterns_Game(Game):
         self.zobrist_file = zobrist_file
         self.init_zobrist()
 
+    def set_state(self,position,onturn):
+        super().set_state(position,onturn)
+        self.winhash = deepcopy(self.orig_winhash)
+        besetztos = (self.position[0]&self.position[1])
+        self.aval_squares = set(filter(lambda x:not x&besetztos,(1<<y for y in range(self.squares))))
+        self.clean_winpatterns_and_aval(self.winpatterns)
+
     def reset(self):
         super().reset()
         self.winhash = deepcopy(self.orig_winhash)

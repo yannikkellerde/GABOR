@@ -1,64 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link rel="stylesheet" href="../page/styles/explore_results.css">
-    <link rel="stylesheet" href="../page/styles/qango6x6.css">
+    <link rel="stylesheet" href="../styles/explore_results.css">
+    <link rel="stylesheet" href="../styles/board.css">
     <meta charset="utf-8"/>
 </head>
 
 <body>
-<table id="qango6x6">
-    <tbody>
-        <tr>
-            <td class="pink"></td>
-            <td class="pink"></td>
-            <td class="orange"></td>
-            <td class="yellow"></td>
-            <td class="pink"></td>
-            <td class="pink"></td>
-        </tr>
-        <tr>
-            <td class="pink"></td>
-            <td class="orange"></td>
-            <td class="blue"></td>
-            <td class="green"></td>
-            <td class="yellow"></td>
-            <td class="pink"></td>
-        </tr>
-        <tr>
-            <td class="orange"></td>
-            <td class="blue"></td>
-            <td class="blue"></td>
-            <td class="green"></td>
-            <td class="green"></td>
-            <td class="yellow"></td>
-        </tr>
-        <tr>
-            <td class="yellow"></td>
-            <td class="green"></td>
-            <td class="green"></td>
-            <td class="blue"></td>
-            <td class="blue"></td>
-            <td class="orange"></td>
-        </tr>
-        <tr>
-            <td class="pink"></td>
-            <td class="yellow"></td>
-            <td class="green"></td>
-            <td class="blue"></td>
-            <td class="orange"></td>
-            <td class="pink"></td>
-        </tr>
-        <tr>
-            <td class="pink"></td>
-            <td class="pink"></td>
-            <td class="yellow"></td>
-            <td class="orange"></td>
-            <td class="pink"></td>
-            <td class="pink"></td>
-        </tr>
-    </tbody>
-</table>
+<!--Insert board here-->
 <div id="main-wrap">
     <div class="analyse__tools">
         <section class="explorer-box sub-box">
@@ -83,6 +32,7 @@
         <button class="w3-button w3-large w3-black disabled" id="go_end" onclick="go_end()">&raquo;</button>
     </div>
 </div>
+<!--Insert path to gamescript here-->
 <script>
 
 function set_disablility(){
@@ -98,10 +48,6 @@ function set_disablility(){
         document.getElementById("go_start").classList.add("disabled")
         document.getElementById("go_back").classList.add("disabled")
     }
-}
-
-function move_int_to_str(int_move){
-    return "abcdef"[int_move % 6]+(parseInt(int_move/6)+1)
 }
 
 function xml_http_post(url, data, callback) {
@@ -123,6 +69,7 @@ function show_moves(){
     }
     document.getElementById("table_data").innerHTML="";
     function have_moves_to_show(server_data){
+        console.log(server_data)
         var miteval = [];
 
         for (var key in server_data) {
@@ -130,7 +77,6 @@ function show_moves(){
                 curval = server_data[key];
             }
             else if (server_data.hasOwnProperty(key)) {
-                console.log([key, server_data[key]])
                 miteval.push( [key, server_data[key]] );
             }
         }
@@ -182,22 +128,18 @@ function player_move(move){
 }
 
 function reset(){
-    position = new Array(36).fill(0);
+    position = new Array(num_squares).fill(0);
     onturn = 2;
-    var tbody = document.getElementById("qango6x6").children[0]
-    for (c=0;c<tbody.children.length;c++){
-        tr = tbody.children[c]
-        for (t=0;t<tr.children.length;t++){
-            td = tr.children[t];
-            td.setAttribute("onclick", "player_move("+(c*6+t)+")");
-        }
+    var tds = get_squares()
+    for (var i=0;i<tds.length;i++){
+        tds[i].setAttribute("onclick", "player_move("+i+")");
     }
 }
 
 function show_pos(){
-    var tbody = document.getElementById("qango6x6").children[0]
-    for (i=0;i<position.length;i++){
-        td = tbody.children[parseInt(i/6)].children[i%6]
+    squares = get_squares();
+    for (i=0;i<squares.length;i++){
+        td = squares[i];
         if (position[i] == 0){
             td.innerHTML = ""
         }
@@ -209,6 +151,7 @@ function show_pos(){
         }
     }
 }
+
 function go_forward(){
     if (hist_index==position_hist.length-1){return}
     hist_index++;
@@ -241,10 +184,12 @@ function go_start(){
     }
 }
 
-position = new Array(36).fill(0);
+position = new Array(num_squares).fill(0);
 position_hist = [position]
 hist_index = 0
 onturn = 2;
 reset();
 show_moves();
 </script>
+</body>
+</html>
