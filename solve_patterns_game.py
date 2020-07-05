@@ -3,6 +3,7 @@ import util
 import gc
 import sys
 from patterns_game import Patterns_Game
+from util import draw_board
 from data_magic import save_sets
 
 # Node storage for memory efficency in lists
@@ -115,7 +116,7 @@ class PN_search():
                 mindepth = adepth
         if (n[PN] == 0 or n[DN] == 0) and len(n)>PARENTS:
             self.delete_node(n, n[PARENTS], n[CHILDREN],depth)
-        return mindepth
+        return max(mindepth,0)
 
     def select_most_proving(self, n, depth):
         path = []
@@ -163,6 +164,7 @@ class PN_search():
             self.game.make_move(move)
             hashval = self.game.basic_hash() if childdepth<self.endgame_depth else hash(self.game)
             if hashval in knownhashvals:
+                self.game.revert_move(1)
                 continue
             if hashval in use_ttable:
                 found = use_ttable[hashval]
@@ -186,6 +188,7 @@ class PN_search():
             n[CHILDREN].append((move,child))
             self.node_count += 1
             if res==myturn:
+                self.game.revert_move(1)
                 break
             self.game.revert_move(1)
 
@@ -221,6 +224,7 @@ class PN_search():
             most_proving = curr_path[-1]
             self.expand(most_proving,depth)
             new_depth = self.update_anchestors(most_proving,depth)
+            print(len(curr_path),depth,new_depth)
             if new_depth < depth:
                 self.game.revert_move(number=depth-new_depth)
                 curr_path = curr_path[:new_depth-depth]

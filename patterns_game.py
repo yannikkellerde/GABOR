@@ -78,6 +78,7 @@ class Patterns_Game(Game):
                     if first:
                         supersetters.update(self.pat_to_square[wp])
                         supersetters.discard(binsquare)
+                        first=False
                     else:
                         raus = set()
                         for suse in supersetters:
