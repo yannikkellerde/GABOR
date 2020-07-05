@@ -5,6 +5,7 @@ from patterns_games import Tic_tac_toe, Qango6x6
 import math
 import json
 
+from util import draw_board
 import cgi
 import threading
 import webbrowser
@@ -54,6 +55,9 @@ class Post_handler(SimpleHTTPRequestHandler):
                         my_board +
                         my_content.split("<!--Insert board here-->")[1]
             )
+            my_content = (my_content.split("<!--Insert link to stylesheet here-->")[0] +
+                         '<link rel="stylesheet" href="/'+os.path.join(my_folder,"board.css")+'">' +
+                          my_content.split("<!--Insert link to stylesheet here-->")[1])
             my_content = (my_content.split("<!--Insert path to gamescript here-->")[0] +
                         "<script>"+my_js+"</script>" +
                         my_content.split("<!--Insert path to gamescript here-->")[1])
@@ -69,7 +73,8 @@ class Post_handler(SimpleHTTPRequestHandler):
         real_pos = [sum(1<<i for i,a in enumerate(data["position"]) if a==pnum) for pnum in [1,2]]
         game.set_state(real_pos,data["onturn"])
         curhash = hash(game)
-        print("###########\n",real_pos,"\n",curhash,'\n############')
+        draw_board(game.position,game.squares)
+        print(game.aval_squares)
         curval = evaluate(game,curhash)
         movevals = {"current":curval}
         evalmap = {None:0,False:1,True:2}

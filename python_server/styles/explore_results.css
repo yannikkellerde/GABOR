@@ -10,6 +10,17 @@
     text-align: center;
 }
 
+#board{
+    position: absolute;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+#board td{
+    text-align: center;
+    cursor: pointer;
+}
+
 .moves {
     border-collapse: collapse;
     border-spacing: 0;
@@ -190,51 +201,10 @@ button {
     color: #fff;
 }
 
-#tic_tac_toe{
-    position: absolute;
-    width: 600px;
-    height: 600px;
-    left: 200px;
-    top: 100px;
-    border-collapse: collapse;
-    color: #fff;
-    table-layout: fixed;
-}
-
-#tic_tac_toe tr{
-    border-top: 4px solid white;
-    border-bottom: 4px solid white;
-    height:200px;
-}
-
-#tic_tac_toe td{
-    width:200px;
-    border-left: 4px solid white;
-    border-right: 4px solid white;
-    text-align: center;
-    font-size: 82px;
-    cursor: pointer;
-}
-
 td.occupied{
     cursor: default;
 }
 
-#tic_tac_toe td:first-child{
-    border-left: 4px solid transparent;
-}
-
-#tic_tac_toe td:last-child{
-    border-right: 4px solid transparent;
-}
-
-#tic_tac_toe tr:first-child{
-    border-top: 4px solid transparent;
-}
-
-#tic_tac_toe tr:last-child{
-    border-bottom: 4px solid transparent;
-}
 
 .pink{
     background: radial-gradient(circle, rgb(252, 2, 231) 0%, rgb(51, 2, 53) 100%);

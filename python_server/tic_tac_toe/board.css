@@ -1,0 +1,26 @@
+#board{
+    width: 475px;
+    height: 475px;
+    left: 250px;
+    top: 250px;
+}
+#board tr{
+    height:125px;
+}
+#board td{
+    width:125px;
+}
+.blocked_square{
+    text-align: center;
+    font-size: 82px;
+    color:black;
+}
+.whitestone:after{
+    content:"O"
+}
+.blackstone:after{
+    content:"X"
+}
+.stone{
+    font-size:60px;
+}
