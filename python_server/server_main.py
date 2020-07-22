@@ -16,7 +16,7 @@ import os
 FILE = "python_server/explore_wins.html"
 PORT = 8080
 
-def evaluate(game,hashval,proofconditions = [True,None]):
+def evaluate(game,hashval,proofconditions = [True]):
     posval = game.check_any_win()
     if posval is not None:
         return posval in proofconditions

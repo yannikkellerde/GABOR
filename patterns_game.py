@@ -26,15 +26,23 @@ class Patterns_Game(Game):
     def set_state(self,position,onturn):
         super().set_state(position,onturn)
         self.winhash = deepcopy(self.orig_winhash)
-        besetztos = (self.position[0]|self.position[1])
-        self.aval_squares = set(filter(lambda x:not x&besetztos,(1<<y for y in range(self.squares))))
+        self.besetztos = (self.position[0]|self.position[1])
+        self.aval_squares = set(filter(lambda x:not x&self.besetztos,(1<<y for y in range(self.squares))))
+        self.build_winpatterns()
         self.clean_winpatterns_and_aval(self.winpatterns)
+
+    def build_winpatterns(self):
+        self.winpatterns = set()
+        for _key,value in self.winhash.items():
+            self.winpatterns.update(value)
+        self.winpatterns = list(self.winpatterns)
 
     def reset(self):
         super().reset()
         self.winhash = deepcopy(self.orig_winhash)
-        besetztos = (self.position[0]&self.position[1])
-        self.aval_squares = set(filter(lambda x:not x&besetztos,(1<<y for y in range(self.squares))))
+        self.besetztos = (self.position[0]|self.position[1])
+        self.aval_squares = set(filter(lambda x:not x&self.besetztos,(1<<y for y in range(self.squares))))
+        self.build_winpatterns()
 
     def get_actions(self):
         return sorted(self.aval_squares,key=lambda x:-len(self.winhash[x]))
@@ -42,27 +50,32 @@ class Patterns_Game(Game):
     def revert_move(self,number=1):
         hist_index = len(self.history)-number
         self.position,self.onturn,self.aval_squares,self.winhash = self.history[hist_index]
+        self.besetztos = (self.position[0]|self.position[1])
         self.history = self.history[:hist_index]
 
     def clean_winpatterns_and_aval(self,care_patterns):
-        patterns_loosers = set()
+        patterns_changers = set()
         discardcombos = set()
         for wp in care_patterns:
+            patterns_changers.update(self.pat_to_square[wp])
             if (wp&self.position[0] and wp&self.position[1]):
                 for binsquare in self.pat_to_square[wp]:
-                    patterns_loosers.add(binsquare)
                     discardcombos.add((binsquare,wp))
         for binsquare,wp in discardcombos:
             self.winhash[binsquare].discard(wp)
-        self._clean_aval(patterns_loosers)
+        self._clean_aval(patterns_changers)
 
     def make_move(self,action): 
         self.history.append([self.position.copy(),self.onturn,self.aval_squares.copy(),deepcopy(self.winhash)])
         super().make_move(action)
+        self.besetztos = (self.position[0]|self.position[1])
         self.aval_squares.discard(action)
         self.clean_winpatterns_and_aval(self.winhash[action])
+
     def _clean_aval(self,patterns_loosers):
         for binsquare in patterns_loosers:
+            if binsquare&self.besetztos:
+                continue
             myset = self.winhash[binsquare]
             mylen = len(myset)
             if mylen == 0:
@@ -71,6 +84,8 @@ class Patterns_Game(Game):
                 wp, = myset
                 if ((wp^binsquare)^(wp&self.position[0]) and (wp^binsquare)^(wp&self.position[1])):
                     self.aval_squares.discard(binsquare)
+                else:
+                    self.aval_squares.add(binsquare)
             else:
                 first = True
                 supersetters = set()
@@ -86,6 +101,7 @@ class Patterns_Game(Game):
                                 raus.add(suse)
                         supersetters -= raus
                         if len(supersetters)==0:
+                            self.aval_squares.add(binsquare)
                             break
                 else:
                     self.aval_squares.discard(binsquare)
@@ -93,32 +109,32 @@ class Patterns_Game(Game):
     def init_zobrist(self):
         with open(self.zobrist_file,'rb') as f:
             self.bitstrings = pickle.load(f)
+        self.bitstrings = [int(x) for x in self.bitstrings]
 
     def __hash__(self):
         def bit_hash_func(bit_pos):
             score = 0
             bit = 1<<bit_pos
+            have_map = {}
             if bit&self.position[0]:
-                score ^= self.bitstrings[0]
-            elif bit&self.position[1]:
                 score ^= self.bitstrings[1]
-            combo_winpats = []
+            elif bit&self.position[1]:
+                score ^= self.bitstrings[2]
             for wp in self.winpatterns:
                 if bit&wp:
-                    score ^= winscores[wp]
-                    combo_winpats.append(wp)
-            if len(combo_winpats)==0:
-                return 0
-            #elif len(combo_winpats)==1:
-            #    if (((self.position[0]&combo_winpats[0])|bit)^combo_winpats[0]) and (((self.position[1]&combo_winpats[0])|bit)^combo_winpats[0]):
-            #        return 0
+                    if winscores[wp] in have_map:
+                        have_map[winscores[wp]]+=1
+                        score ^= winscores[wp]//have_map[winscores[wp]]
+                    else:
+                        score ^= winscores[wp]
+                        have_map[winscores[wp]]=1
             return score
-        self.winpatterns = set()
-        for _key,value in self.winhash.items():
-            self.winpatterns.update(value)
-        self.winpatterns = list(self.winpatterns)
+        self.build_winpatterns()
         winscores = self.score_winpatterns(self.winpatterns)
-        return int(reduce(lambda x,y:x^y, map(bit_hash_func,range(self.squares))))
+        winscore_num = int(reduce(lambda x,y:x^y, map(bit_hash_func,range(self.squares))))
+        #if self.onturn:
+        #    winscore_num = winscore_num^self.bitstrings[0]
+        return winscore_num
 
     def score_winpatterns(self,winpatterns):
         def get_non_uniques(winpattern):
@@ -128,7 +144,7 @@ class Patterns_Game(Game):
                     out += 1 + set_bits_count[wp][0]+5*set_bits_count[wp][1]
             return out
         def my_score_func(winpattern):
-            return   (self.bitstrings[(len(get_set_bits(winpattern,self.squares))-3)+2] ^
+            return   (self.bitstrings[(len(get_set_bits(winpattern,self.squares))-3)+5] ^
                      self.bitstrings[set_bits_count[winpattern][0]+20] ^
                      self.bitstrings[set_bits_count[winpattern][1]+40] ^
                      self.bitstrings[(get_non_uniques(winpattern)+60)%len(self.bitstrings)])
@@ -137,10 +153,7 @@ class Patterns_Game(Game):
 
     def shrink_myself(self):
         self.sort_poses = self.position.copy()
-        self.winpatterns = set()
-        for _key,value in self.winhash.items():
-            self.winpatterns.update(value)
-        self.winpatterns = list(self.winpatterns)
+        self.build_winpatterns()
         curr_index = 0
         curr_bit = 1
         out_winpatterns = [0 for _ in self.winpatterns]

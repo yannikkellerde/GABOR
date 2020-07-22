@@ -111,9 +111,10 @@ class PN_search():
             return depth
         mindepth = depth
         for p in n[PARENTS].copy():
-            adepth = self.update_anchestors(p,depth-1)
-            if adepth<mindepth:
-                mindepth = adepth
+            if len(p)>3:
+                adepth = self.update_anchestors(p,depth-1)
+                if adepth<mindepth:
+                    mindepth = adepth
         if (n[PN] == 0 or n[DN] == 0) and len(n)>PARENTS:
             self.delete_node(n, n[PARENTS], n[CHILDREN],depth)
         return max(mindepth,0)
@@ -145,7 +146,7 @@ class PN_search():
         if hashval in (self.disprovenset if depth<self.endgame_depth else self.endgame_disprovenset):
             return False
         if self.game.check_win(move):
-            return (depth+self.game.startpos[1])%2
+            return (depth-1+self.game.startpos[1])%2
         if self.game.check_full():
             return self.drawproves
         return None
@@ -206,13 +207,13 @@ class PN_search():
         curr_path = [self.root]
         c = 1
         while self.root[PN]!=0 and self.root[DN]!=0:
-            if c % 1000 == 0:
-                print(self.node_count, " ".join([str(x[PN]) for x in self.root[CHILDREN]]))
-                print(self.node_count, " ".join([str(x[DN]) for x in self.root[CHILDREN]]))
+            if c % 1 == 0:
+                #print(" ".join([str(x[1][PN]) for x in self.root[CHILDREN]]))
+                #print(" ".join([str(x[1][DN]) for x in self.root[CHILDREN]]))
                 if c % 1000000 == 0:
                     gc.collect()
-                print("Normal Proofadds: {}".format(self.proofadds))
-                print("Endgame Proofadds: {}".format(self.endgame_proofadds))
+                #print("Normal Proofadds: {}".format(self.proofadds))
+                #print("Endgame Proofadds: {}".format(self.endgame_proofadds))
                 if not util.resources_avaliable():
                     return False
             if c%100000==0:
@@ -220,11 +221,11 @@ class PN_search():
                           (self.endgame_provenset,self.endgame_prooffile),(self.endgame_disprovenset,self.endgame_disprooffile))
             c+=1
             path,depth = self.select_most_proving(curr_path[-1],depth)
+            #draw_board(self.game.position,self.game.squares)
             curr_path = curr_path + path
             most_proving = curr_path[-1]
             self.expand(most_proving,depth)
             new_depth = self.update_anchestors(most_proving,depth)
-            print(len(curr_path),depth,new_depth)
             if new_depth < depth:
                 self.game.revert_move(number=depth-new_depth)
                 curr_path = curr_path[:new_depth-depth]

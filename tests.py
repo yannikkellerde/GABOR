@@ -1,8 +1,41 @@
 from patterns_game import Patterns_Game,convert_into_patterns_game
 from patterns_games import Tic_tac_toe, Qango6x6
-from util import draw_board
+from util import draw_board,board_to_pos
 import time
 import math
+
+def test_aval_tic():
+    p1 = """#####
+            #X O#
+            # O #
+            #  X#
+            #####"""
+    true_pos = board_to_pos(p1)
+    draw_board(true_pos,9)
+    game = Tic_tac_toe(startpos=[true_pos,False])
+    print(hash(game))
+    p1 = """#####
+            #X O#
+            # O #
+            # X #
+            #####"""
+    true_pos = board_to_pos(p1)
+    draw_board(true_pos,9)
+    game = Tic_tac_toe(startpos=[true_pos,False])
+    print(hash(game))
+    exit()
+    print(game.aval_squares)
+    game = Tic_tac_toe(startpos=[[0,0],True])
+    game.make_move(1)
+    game.make_move(64)
+    game.make_move(16)
+    game.make_move(32)
+    draw_board(game.position,game.squares)
+    print(game.aval_squares)
+    print(hash(game))
+    game.make_move(256)
+    draw_board(game.position,game.squares)
+    print(hash(game))
 
 def test_patterns_qango():
     pos1 = [
@@ -42,23 +75,23 @@ def test_patterns_qango():
     print(time.perf_counter()-start)
 def test_tic_tac_toe():
     pos = [
-        int("0b001"
-              "100"
-              "011",2),
-        int("0b010"
-              "001"
-              "100",2)
+        int("0b000"
+              "000"
+              "000",2),
+        int("0b000"
+              "010"
+              "000",2)
     ]
     t = Tic_tac_toe([pos.copy(),True])
     draw_board(t.position,t.squares)
     hash1 = hash(t)
     pos = [
-        int("0b100"
-              "001"
-              "110",2),
         int("0b000"
-              "110"
-              "001",2)
+              "000"
+              "000",2),
+        int("0b000"
+              "000"
+              "010",2)
     ]
     t = Tic_tac_toe([pos.copy(),True])
     draw_board(t.position,t.squares)
@@ -302,4 +335,4 @@ def teshash():
     print([dohash(p) for p in poses])
 
 if __name__=='__main__':
-    test_tic_tac_toe()
+    test_aval_tic()

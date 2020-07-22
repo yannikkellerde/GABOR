@@ -53,6 +53,18 @@ def getwinhash(winpatterns, squares):
                 winhash[binsquare].add(w)
     return winhash,pat_to_square
 
+def board_to_pos(board):
+    new_board = ""
+    for line in board.splitlines():
+        new_board += line.strip().replace("#","").replace("\t","")
+    pos = [0,0]
+    for i,c in enumerate(new_board):
+        if c=="X":
+            pos[1]|=(1<<i)
+        elif c=="O":
+            pos[0]|=(1<<i)
+    return pos
+
 def draw_board(pos, squares):
     rowsquares = math.sqrt(squares)
     outstr=((int(rowsquares)+2)*"#")+"\n#"
