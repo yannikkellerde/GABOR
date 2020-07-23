@@ -47,11 +47,16 @@ class Patterns_Game(Game):
     def get_actions(self):
         return sorted(self.aval_squares,key=lambda x:-len(self.winhash[x]))
 
+    def _add_winhashs(self,square_wp_combos):
+        for binsquare,wp in square_wp_combos:
+            self.winhash[binsquare].add(wp)
+
     def revert_move(self,number=1):
-        hist_index = len(self.history)-number
-        self.position,self.onturn,self.aval_squares,self.winhash = self.history[hist_index]
-        self.besetztos = (self.position[0]|self.position[1])
+        for hist_index in range(len(self.history)-1,len(self.history)-number-1,-1):
+            self._add_winhashs(self.history[hist_index][0])
+        self.position,self.onturn,self.aval_squares = self.history[hist_index][1:]
         self.history = self.history[:hist_index]
+        
 
     def clean_winpatterns_and_aval(self,care_patterns):
         patterns_changers = set()
@@ -64,13 +69,15 @@ class Patterns_Game(Game):
         for binsquare,wp in discardcombos:
             self.winhash[binsquare].discard(wp)
         self._clean_aval(patterns_changers)
+        return discardcombos
 
-    def make_move(self,action): 
-        self.history.append([self.position.copy(),self.onturn,self.aval_squares.copy(),deepcopy(self.winhash)])
+    def make_move(self,action):
+        old_info = self.position.copy(),self.onturn,self.aval_squares.copy()
         super().make_move(action)
         self.besetztos = (self.position[0]|self.position[1])
         self.aval_squares.discard(action)
-        self.clean_winpatterns_and_aval(self.winhash[action])
+        discardcombos = self.clean_winpatterns_and_aval(self.winhash[action])
+        self.history.append((discardcombos,)+old_info)
 
     def _clean_aval(self,patterns_loosers):
         for binsquare in patterns_loosers:

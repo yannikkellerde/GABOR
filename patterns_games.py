@@ -1,5 +1,6 @@
 from patterns_game import Patterns_Game
 from qango6x6 import Qango6x6_base
+from bitops import bitops
 from util import findfivers, findsquares, remove_useless_wsn
 from functools import reduce
 
@@ -31,6 +32,7 @@ class Qango6x6(Patterns_Game,Qango6x6_base):
         }
         self.winsquarenums.update(findsquares(squares))
         self.winsquarenums.update(findfivers(squares))
+        self.bitops = bitops()
         remove_useless_wsn(self.winsquarenums)
         winpatterns = list(map(lambda x:reduce(lambda y,z:y|z, list(map(lambda a:2**a, x))), self.winsquarenums))
         super().__init__(winpatterns,startpos,squares,zobrist_file)

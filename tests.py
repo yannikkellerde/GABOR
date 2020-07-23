@@ -4,15 +4,33 @@ from util import draw_board,board_to_pos
 import time
 import math
 
+def speed_tests():
+    pos1 = [
+      int("0b000001"
+            "010010"
+            "100000"
+            "011110"
+            "010000"
+            "000010",2),
+      int("0b000010"
+            "000001"
+            "010010"
+            "100001"
+            "010000"
+            "100001",2),
+    ]
+    q1 = Qango6x6([pos1.copy(),True])
+    q1.make_move(1)
+
 def test_aval_tic():
     p1 = """#####
             #X O#
-            # O #
-            #  X#
+            #   #
+            #X O#
             #####"""
     true_pos = board_to_pos(p1)
     draw_board(true_pos,9)
-    game = Tic_tac_toe(startpos=[true_pos,False])
+    game = Tic_tac_toe(startpos=[true_pos,True])
     print(hash(game))
     p1 = """#####
             #X O#
@@ -39,18 +57,18 @@ def test_aval_tic():
 
 def test_patterns_qango():
     pos1 = [
-      int("0b001000"
-            "000000"
-            "000000"
-            "000000"
-            "000100"
-            "000000",2),
-      int("0b100000"
-            "001000"
-            "000000"
-            "000000"
-            "000000"
-            "000100",2),
+      int("0b000001"
+            "010010"
+            "100000"
+            "011110"
+            "010000"
+            "000010",2),
+      int("0b000010"
+            "000001"
+            "010010"
+            "100001"
+            "010000"
+            "100001",2),
     ]
     pos2 = [
       int("0b000000"
@@ -71,7 +89,10 @@ def test_patterns_qango():
     draw_board(q1.position,q1.squares)
     draw_board(q2.position,q2.squares)
     start = time.perf_counter()
-    print(hash(q1)==hash(q2))
+    hash(q1)
+    print(time.perf_counter()-start)
+    start = time.perf_counter()
+    q1.basic_hash()
     print(time.perf_counter()-start)
 def test_tic_tac_toe():
     pos = [
@@ -335,4 +356,4 @@ def teshash():
     print([dohash(p) for p in poses])
 
 if __name__=='__main__':
-    test_aval_tic()
+    speed_tests()

@@ -152,11 +152,15 @@ function show_pos(){
     }
 }
 
-function go_forward(){
+function move_forward(){
     if (hist_index==position_hist.length-1){return}
     hist_index++;
     position = position_hist[hist_index].slice()
     onturn = onturn==1?2:1;
+}
+
+function go_forward(){
+    move_forward();
     show_moves();
     set_disablility();
     show_pos();
@@ -164,15 +168,22 @@ function go_forward(){
 
 function go_end(){
     while (hist_index!=tree_move.length-1){
-        go_forward()
+        move_forward();
     }
+    show_moves();
+    set_disablility();
+    show_pos();
 }
 
-function go_back(){
+function move_back(){
     if (hist_index==0){return}
     hist_index--;
     onturn = onturn==1?2:1;
     position = position_hist[hist_index].slice()
+}
+
+function go_back(){
+    move_back();
     show_moves();
     set_disablility();
     show_pos();
@@ -180,8 +191,11 @@ function go_back(){
 
 function go_start(){
     while (hist_index!=0){
-        go_back()
+        move_back()
     }
+    show_moves();
+    set_disablility();
+    show_pos();
 }
 
 position = new Array(num_squares).fill(0);

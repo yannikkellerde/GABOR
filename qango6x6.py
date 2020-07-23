@@ -9,18 +9,18 @@ class Qango6x6_base(Game):
     squares:int
 
     def get_symetries(self, pos):
-            t = self.bitops.ptranspose(pos)
-            r = self.bitops.preverse(pos)
-            syms = [pos,
-                    self.bitops.pmirrorx(pos),
-                    self.bitops.pmirrory(pos),
-                    r, # rotate by 180 deg
-                    t, # mirror on topleft to bottomright diagonal
-                    self.bitops.ptranspose(r), # mirror on bottomleft to topright diagonal
-                    self.bitops.pmirrorx(t), # rotate by 90 deg
-                    self.bitops.pmirrory(t) # rotate by 270 deg
-            ]
-            return syms
+        t = self.bitops.ptranspose(pos)
+        r = self.bitops.preverse(pos)
+        syms = [pos,
+                self.bitops.pmirrorx(pos),
+                self.bitops.pmirrory(pos),
+                r, # rotate by 180 deg
+                t, # mirror on topleft to bottomright diagonal
+                self.bitops.ptranspose(r), # mirror on bottomleft to topright diagonal
+                self.bitops.pmirrorx(t), # rotate by 90 deg
+                self.bitops.pmirrory(t) # rotate by 270 deg
+        ]
+        return syms
 
     def hashpos(self):
         syms = self.get_symetries(self.position)

@@ -80,6 +80,11 @@ def draw_board(pos, squares):
     outstr+=(int(rowsquares)+1)*"#"
     print(outstr)
 
+def check_position_consistent(pos,onturn):
+    val1 = bin(pos[0]).count("1")+(not onturn) == bin(pos[1]).count("1")
+    val2 = bin(pos[0]).count("1")+bin(pos[1]).count("1") == bin(pos[0]|pos[1]).count("1")
+    return val1 and val2
+
 def show_all_wins(game):
     for p in game.winpatterns:
         game.set_state([p,0],True)
