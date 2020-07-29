@@ -1,1 +1,0 @@
-Idea: Keep a running estimate of winpattern scores. Sort and name squares based on the winpatterns they correpond to, so moves are invariant to the concrete position they stem from.
