@@ -36,7 +36,7 @@ class Qango6x6(Graph_game):
         self.winsquarenums.update(findfivers(36))
         remove_useless_wsn(self.winsquarenums)
         self.graph = wsn_to_graph(self.winsquarenums)
-        self.startgraph = self.graph.copy()
+        super().__init__()
 
 class Tic_tac_toe(Graph_game):
     def __init__(self):
@@ -44,7 +44,7 @@ class Tic_tac_toe(Graph_game):
                               frozenset({0,3,6}),frozenset({1,4,7}),frozenset({2,5,8}),
                               frozenset({0,4,8}),frozenset({2,4,6})}
         self.graph = wsn_to_graph(self.winsquarenums)
-        self.startgraph = self.graph.copy()
+        super().__init__()
 
 if __name__ == "__main__":
     q = Tic_tac_toe()

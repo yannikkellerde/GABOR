@@ -97,8 +97,13 @@ def wl_hash(G, edge_attr=None, node_attr=None, iterations=3, digest_size=16):
         # sort the counter, extend total counts
         items.extend(sorted(c.items(), key=lambda x: x[0]))
 
+    for key,value in node_labels.items():
+        h = blake2b(digest_size=digest_size)
+        h.update(value.encode('ascii'))
+        G.nodes[key]["label"] = h.hexdigest()
+
     # hash the final counter
     h = blake2b(digest_size=digest_size)
     h.update(str(tuple(items)).encode('ascii'))
     h = h.hexdigest()
-    return h
+    G.graph["hash"] = h
