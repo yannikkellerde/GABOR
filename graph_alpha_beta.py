@@ -10,28 +10,18 @@ class Alpha_beta():
     def search(self,alpha,beta):
         if len(self.game.graph)==0:
             return 0
-        if self.game.hash in self.ttable:
+        try:
             return self.ttable[self.game.hash]
+        except:
+            pass
         if self.game.onturn == self.maximizer:
             value = -1
             moves = self.game.get_actions()
-            print(moves)
-            print(self.game.graph.nodes(data=True))
-            print(self.game.graph.edges(data=True))
-            self.game.draw_me(with_labels=True)
             if moves is None:
                 value = 1
             else:
                 for move in moves:
-                    try:
-                        self.game.make_move(move)
-                    except Exception as e:
-                        print(e)
-                        self.game.draw_me(with_labels=True)
-                        print(self.game.graph.nodes(data=True))
-                        self.game.hashme()
-                        print(self.game.graph.nodes(data=True))
-                        exit()
+                    self.game.make_move(move)
                     value = max(self.search(alpha,beta),value)
                     self.game.revert_moves(1)
                     alpha = max(alpha,value)

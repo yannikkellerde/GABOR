@@ -35,7 +35,10 @@ class Graph_game():
         self.graph.graph[attrib] = value
 
     def get_node_attribs(self):
-        return dict(self.graph.nodes(data=True))
+        attribs = dict(self.graph.nodes(data=True))
+        for key,value in attribs.items():
+            attribs[key]=value.copy()
+        return attribs
     
     def write_node_attribs(self,node_attribs):
         for key,value in node_attribs.items():
@@ -44,8 +47,10 @@ class Graph_game():
     def hashme(self):
         wl_hash(self.graph,edge_attr="color",node_attr="owner",iterations=3)
 
-    def reset(self):
-        self.graph = self.startgraph.copy()
+    def set_graph(self,G:nx.Graph):
+        self.graph = G
+        self.revert_history = []
+        self.hashme()
 
     def revert_moves(self,amount):
         for _ in range(amount):

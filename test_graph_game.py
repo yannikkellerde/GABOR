@@ -9,12 +9,16 @@ def test_moving():
         if moves==True:
             print("win")
             break
-        #print("\n#####################\n",moves)
-        #print(game.graph.nodes(data=True))
+        print("\n#####################\n",moves)
+        before = dict(game.graph.nodes(data=True))
+        print(before)
         game.draw_me(with_labels=True)
         game.make_move(moves[0])
         game.draw_me(with_labels=True)
         game.revert_moves(1)
+        after = dict(game.graph.nodes(data=True))
+        print(after)
+        assert before == after
         game.draw_me(with_labels=True)
         game.make_move(moves[0])
 
