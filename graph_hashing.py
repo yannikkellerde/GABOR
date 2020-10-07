@@ -9,7 +9,7 @@ from collections import Counter
 from hashlib import blake2b
 
 
-def wl_hash(G, edge_attr=None, node_attr=None, iterations=3, digest_size=8):
+def wl_hash(G, edge_attr=None, node_attr=None, iterations=3, digest_size=16):
     """
     Returns WL hash of a graph.
     We iteratively aggregate and hash neighbourhoods of each node.

@@ -22,13 +22,24 @@ class Graph_game():
 
     @property
     def hash(self):
-        return int(self.graph.graph["hash"],16)
+        return self.graph.graph["hash"]
+
+    @property
+    def onturn(self):
+        return self.graph.graph["onturn"]
 
     def change_attrib(self,node,attrib,value):
         self.graph.nodes[node][attrib] = value
     
     def change_graph_attrib(self,attrib,value):
         self.graph.graph[attrib] = value
+
+    def get_node_attribs(self):
+        return dict(self.graph.nodes(data=True))
+    
+    def write_node_attribs(self,node_attribs):
+        for key,value in node_attribs.items():
+            self.graph.add_node(key,**value)
 
     def hashme(self):
         wl_hash(self.graph,edge_attr="color",node_attr="owner",iterations=3)
@@ -44,7 +55,6 @@ class Graph_game():
             instructions = self.revert_history.pop()
             for func,args,kwargs in instructions:
                 func(*args,**kwargs)
-        self.hashme()
         return True
     
     def get_actions(self):
@@ -59,7 +69,7 @@ class Graph_game():
                 else:
                     blue_neighbours += 1
             if blue_neighbours == 0 and nattribs["owner"] == self.graph.graph["onturn"]:
-                return True
+                return None
             if toadd is None:
                 alreadymaps[node] = [blue_neighbours,blue_neighbours==0,[nattribs["label"]]]
             else:
@@ -72,6 +82,7 @@ class Graph_game():
     
     def make_move(self,move):
         revert_instructions = []
+        revert_instructions.append((self.write_node_attribs,(self.get_node_attribs(),),{}))
         win = False
         for node,nattribs in self.graph.nodes(data=True):
             if nattribs["label"] in move:
@@ -106,12 +117,12 @@ class Graph_game():
                 win = True
             for kickout,addedges,own in kickouts:
                 revert_instructions.append((self.graph.add_edges_from,(addedges,),{}))
-                revert_instructions.append((self.graph.add_node,(kickout,),{"owner":own}))
                 self.graph.remove_node(kickout)
-        self.hashme()
         revert_instructions.append((self.change_graph_attrib,("onturn",self.graph.graph["onturn"]),{}))
+        revert_instructions.append((self.change_graph_attrib,("hash",self.graph.graph["hash"]),{}))
         self.revert_history.append(reversed(revert_instructions))
         self.graph.graph["onturn"] = "b" if self.graph.graph["onturn"]=="w" else "w"
+        self.hashme()
         return win
 
     def draw_me(self,with_labels=False):

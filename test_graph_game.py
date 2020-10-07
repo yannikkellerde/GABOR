@@ -26,4 +26,5 @@ def test_board_representation():
     game.draw_me(with_labels=True)
 
 if __name__ == "__main__":
-    test_board_representation()
+    test_moving()
+    #test_board_representation()
