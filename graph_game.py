@@ -31,7 +31,7 @@ class Graph_game():
         self.graph.graph[attrib] = value
 
     def hashme(self):
-        wl_hash(self.graph,edge_attr="color",node_attr="owner")
+        wl_hash(self.graph,edge_attr="color",node_attr="owner",iterations=3)
 
     def reset(self):
         self.graph = self.startgraph.copy()

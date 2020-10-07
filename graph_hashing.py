@@ -104,6 +104,6 @@ def wl_hash(G, edge_attr=None, node_attr=None, iterations=3, digest_size=8):
 
     # hash the final counter
     h = blake2b(digest_size=digest_size)
-    h.update((str(tuple(items))+G.onturn).encode('ascii'))
+    h.update((str(tuple(items))+G.graph["onturn"]).encode('ascii'))
     h = h.hexdigest()
     G.graph["hash"] = h
