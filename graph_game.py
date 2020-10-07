@@ -18,13 +18,17 @@ class Graph_game():
         self.hashme()
         self.startgraph = self.graph.copy()
         self.revert_history = []
+        self.random_pos = nx.random_layout(self.graph, seed=42)
 
     @property
     def hash(self):
-        return self.graph.graph["hash"]
+        return int(self.graph.graph["hash"],16)
 
     def change_attrib(self,node,attrib,value):
         self.graph.nodes[node][attrib] = value
+    
+    def change_graph_attrib(self,attrib,value):
+        self.graph.graph[attrib] = value
 
     def hashme(self):
         wl_hash(self.graph,edge_attr="color",node_attr="owner")
@@ -34,12 +38,12 @@ class Graph_game():
 
     def revert_moves(self,amount):
         for _ in range(amount):
-            if len(instructions)==0:
+            if len(self.revert_history)==0:
                 self.hashme()
                 return False
             instructions = self.revert_history.pop()
-            for instruction in instructions:
-                instruction()
+            for func,args,kwargs in instructions:
+                func(*args,**kwargs)
         self.hashme()
         return True
     
@@ -48,19 +52,22 @@ class Graph_game():
         for node,nattribs in self.graph.nodes(data=True):
             toadd = None
             blue_neighbours = 0
-            for target,tattribs in self.graph.adj[node].items():
-                if tattribs["color"] == "g":
+            for target,eattribs in self.graph.adj[node].items():
+                if eattribs["color"] == "g":
                     if target in alreadymaps:
                         toadd = target
                 else:
                     blue_neighbours += 1
-            print(len(alreadymaps))
+            if blue_neighbours == 0 and nattribs["owner"] == self.graph.graph["onturn"]:
+                return True
             if toadd is None:
-                alreadymaps[node] = [blue_neighbours,[nattribs["label"]]]
+                alreadymaps[node] = [blue_neighbours,blue_neighbours==0,[nattribs["label"]]]
             else:
-                alreadymaps[toadd][1].append(nattribs["label"])
+                alreadymaps[toadd][2].append(nattribs["label"])
+                if blue_neighbours == 0:
+                    alreadymaps[toadd][1] = True
                 alreadymaps[toadd][0] += blue_neighbours
-        actions = list(OrderedSet([frozenset(x[1]) for x in sorted(alreadymaps.values(),key=lambda x:-len(x[1])*1000+x[0])]))
+        actions = list(OrderedSet([frozenset(x[2]) for x in sorted(alreadymaps.values(),key=lambda x:-10000*int(x[1])-len(x[2])*100+x[0])]))
         return actions
     
     def make_move(self,move):
@@ -70,8 +77,9 @@ class Graph_game():
             if nattribs["label"] in move:
                 nodes = {(node,nattribs["owner"])}
                 labels = {nattribs["label"]}
-                for target,tattribs in self.graph.adj[node].items():
-                    if tattribs["color"]=="g":
+                for target,eattribs in self.graph.adj[node].items():
+                    tattribs = self.graph.nodes[target]
+                    if eattribs["color"]=="g":
                         if tattribs["label"] in move:
                             nodes.add((target,tattribs["owner"]))
                             labels.add(tattribs["label"])
@@ -84,25 +92,30 @@ class Graph_game():
             raise Exception(f"Move {move} not found in Graph")
         for node,owner in nodes:
             blue_neighbours = 0
-            for target,tattribs in self.graph.adj[node].items():
-                if tattribs["color"]=="b":
+            kickouts = [(node,list(self.graph.edges(node,data=True)),owner)]
+            for target,eattribs in self.graph.adj[node].items():
+                if eattribs["color"]=="b":
                     if owner=="f":
-                        revert_instructions.append(lambda :self.change_attrib(target,"owner","f"))
+                        revert_instructions.append((self.change_attrib,(target,"owner","f"),{}))
                         self.graph.nodes[target]["owner"] = self.graph.graph["onturn"]
                     elif owner!=self.graph.graph["onturn"]:
-                        revert_instructions.append(lambda :self.graph.add_edges_from(list(self.graph.edges(target))))
-                        self.graph.remove_node(target)
+                        towner = self.graph.nodes[target]["owner"]
+                        kickouts.append((target,list(self.graph.edges(target,data=True)),towner))
                     blue_neighbours+=1
             if owner==self.graph.graph["onturn"] and blue_neighbours==0:
                 win = True
-            revert_instructions.append(lambda :self.graph.add_edges_from(list(self.graph.edges(node))))
-            self.graph.remove_node(node)
-        self.revert_history.append(reversed(revert_instructions))
+            for kickout,addedges,own in kickouts:
+                revert_instructions.append((self.graph.add_edges_from,(addedges,),{}))
+                revert_instructions.append((self.graph.add_node,(kickout,),{"owner":own}))
+                self.graph.remove_node(kickout)
         self.hashme()
+        revert_instructions.append((self.change_graph_attrib,("onturn",self.graph.graph["onturn"]),{}))
+        self.revert_history.append(reversed(revert_instructions))
         self.graph.graph["onturn"] = "b" if self.graph.graph["onturn"]=="w" else "w"
         return win
 
     def draw_me(self,with_labels=False):
+        pos = nx.spring_layout(self.graph, pos=self.random_pos)
         edges = self.graph.edges()
         colors = [self.graph[u][v]['color'] for u,v in edges]
         node_colors = []
@@ -113,5 +126,5 @@ class Graph_game():
                 node_colors.append('black')
             else:
                 node_colors.append("red")
-        nx.draw(self.graph, edge_color=colors, node_color=node_colors,with_labels=with_labels)
+        nx.draw(self.graph,pos=pos, edge_color=colors, node_color=node_colors,with_labels=with_labels,font_color="white")
         plt.show()
