@@ -84,7 +84,7 @@ class PN_search():
         #print(depth,n[HASH])
         old_pn = n[PN]
         old_dn = n[DN]
-        self.set_pn_dn(n,depth)
+        self.set_pn_dn(n,is_prove_node)
         if n[PN] == old_pn and n[DN] == old_dn and n[PN]!=0 and n[DN]!=0:
             return depth
         mindepth = depth
