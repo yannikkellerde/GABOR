@@ -1,4 +1,5 @@
 import networkx as nx
+import math
 from graph_game import Graph_game
 from collections import defaultdict
 
@@ -19,7 +20,7 @@ class Board_game():
         self.node_hash_map = [set() for _ in range(self.squares)]
         for key,value in dict(self.graph_representation.graph.nodes(data=True)).items():
             self.node_hash_map[self.node_map[key]].add(value["label"])
-        self.node_hash_map = {frozenset(x):x for x in self.node_hash_map}
+        self.node_hash_map = {frozenset(x):i for i,x in enumerate(self.node_hash_map)}
     
     def convert_move(self,move):
         return self.node_hash_map[move]
@@ -29,15 +30,39 @@ class Board_game():
         if self.graph_representation.hash in self.ttable:
             val = self.ttable[self.graph_representation.hash]
         else:
-            val = None
+            if len(self.graph_representation.graph) == 0:
+                val = 0
+            else:
+                val = "u"
         self.graph_representation.revert_moves(1)
         return val
 
+    def set_graph(self):
+        self.graph_representation.set_graph(self.to_graph())
+        self.graph_representation.hashme()
+
     def make_move(self, move):
-        self.position[move] = onturn
-        self.onturn = "b" if onturn == "w" else "b"
-        self.graph_representation.set_graph(self.to_graph)
+        self.position[move] = self.onturn
+        self.onturn = "b" if self.onturn == "w" else "b"
+        self.set_graph()        
         self.create_node_hash_map()
+
+    def set_position(self,pos,onturn):
+        self.position = pos
+        self.onturn = onturn
+        self.set_graph()
+
+    def draw_me(self):
+        root = int(math.sqrt(self.squares))
+        out_str = "#"*(root+2)
+        out_str+="\n"
+        for row in range(root):
+            out_str+="#"
+            for col in range(root):
+                out_str += " " if self.position[col+row*root]=="f" else self.position[col+row*root]
+            out_str+="#\n"
+        out_str += "#"*(root+2)
+        print(out_str)
 
     def to_graph(self):
         G = nx.Graph(onturn=self.onturn)

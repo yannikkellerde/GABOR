@@ -16,10 +16,10 @@
     color:black;
 }
 .whitestone:after{
-    content:"X"
+    content:"O"
 }
 .blackstone:after{
-    content:"O"
+    content:"X"
 }
 .stone{
     font-size:60px;

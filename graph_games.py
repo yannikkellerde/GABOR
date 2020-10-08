@@ -28,6 +28,7 @@ def wsn_to_graph(wsns):
 class Qango6x6(Graph_game):
     def __init__(self):
         self.board_representation = Qango6x6_board()
+        self.board_representation.graph_representation = self
         self.graph = self.board_representation.to_graph()
         super().__init__()
 
@@ -48,6 +49,7 @@ class Qango6x6_board(Board_game):
 class Tic_tac_toe(Graph_game):
     def __init__(self):
         self.board_representation = Tic_tac_toe_board()
+        self.board_representation.graph_representation = self
         self.graph = self.board_representation.to_graph()
         super().__init__()
 

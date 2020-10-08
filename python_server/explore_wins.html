@@ -71,20 +71,12 @@ function show_moves(){
     function have_moves_to_show(server_data){
         console.log(server_data)
         var miteval = [];
-
-        for (var key in server_data) {
-            if (key=="current"){
-                curval = server_data[key];
-            }
-            else if (server_data.hasOwnProperty(key)) {
-                miteval.push( [key, server_data[key]] );
-            }
-        }
-        miteval.sort(function(a,b){return a[1]==onturn?-1:(b[1]==onturn?1:(a[1]==0?1:-1))})
+        curval = server_data.moves[0][1]
+        miteval = server_data.moves.slice(1)
         for (var i=0;i<miteval.length;i++){
             var move = miteval[i][0];
             var evaluation = miteval[i][1];
-            var evalconvert = ["Unknown","Black wins or draw","White wins"]
+            var evalconvert = {"u":"Unknown",0:"Draw",1:"Black wins","-1":"White wins"}
             var tr = document.createElement("tr");
             var move_elem = document.createElement("td");
             var eval_elem = document.createElement("td");
@@ -144,10 +136,10 @@ function show_pos(){
             td.innerHTML = ""
         }
         else if (position[i] == 1){
-            td.innerHTML="<div class='stone blackstone'></div>"
+            td.innerHTML="<div class='stone whitestone'></div>"
         }
         else if (position[i] == 2){
-            td.innerHTML="<div class='stone whitestone'></div>"
+            td.innerHTML="<div class='stone blackstone'></div>"
         }
     }
 }
