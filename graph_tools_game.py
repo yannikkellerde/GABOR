@@ -2,6 +2,7 @@ import math
 from tqdm import tqdm,trange
 from copy import copy,deepcopy
 from functools import reduce
+from collections import defaultdict
 import time
 import numpy as np
 import pickle
@@ -39,12 +40,31 @@ class Graph_game():
         self.graph.vp.o = owner_prop
         hash_prop = self.graph.new_vertex_property("long")
         self.graph.vp.h = hash_prop
-        vert_map = {}
+        added_verts = dict()
         for i,wsn in enumerate(list(self.board.winsquarenums)):
-            owner = 1
+            owner = self.owner_rev["f"]
+            add_verts = []
             for ws in wsn:
+                if self.board.position[ws] == "f":
+                    add_verts.append(ws)
                 if self.board.position[ws] != self.owner_map[owner]:
-                    if owner in 
+                    if self.owner_map[owner] == "f":
+                        owner = self.owner_rev[self.board.position[ws]]
+                    else:
+                        break
+            else:
+                ws_vert = self.graph.add_vertex()
+                self.graph.vp.o[ws_vert] = owner
+                for av in add_verts:
+                    if av in added_verts:
+                        my_v = added_verts[av]
+                    else:
+                        my_v = self.graph.add_vertex()
+                        self.graph.vp.o[my_v] = 0
+                        added_verts[av] = my_v
+                    self.graph.add_edge(ws_vert,my_v)
+        self.hashme()
+
     def set_graph(self,G:Graph):
         self.graph = G
         self.hashme()
@@ -71,6 +91,7 @@ class Graph_game():
         win = False
         square_node, = find_vertex(self.graph,self.graph.vp.h,move)
         del_nodes = [square_node]
+        lost_neighbors = defaultdict(int)
         for wp_node in square_node.neighbors():
             owner = self.owner_map(self.graph.vp.o[wp_node])
             if owner == "f":
@@ -79,6 +100,10 @@ class Graph_game():
                 if wp_node.degree == 1:
                     win = True
             else:
+                for sq_node in wp_node.neighbors():
+                    i = self.graph.vertex_index[sq_node]
+                    if sq_node.degree() - lost_neighbors[i] == 1:
+                        del_nodes.append(sq_node)
                 del_nodes.append(wp_node)
         self.graph.remove_vertex(del_nodes)
         self.graph.gp["b"] = not self.graph.gp["b"]
