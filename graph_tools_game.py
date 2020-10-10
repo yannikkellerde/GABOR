@@ -7,7 +7,7 @@ import time
 import numpy as np
 import pickle
 import matplotlib.pyplot as plt
-from board_representation import Board_game
+from graph_board_game import Board_game
 
 from graph_tool.all import *
 from graph_tools_hashing import wl_hash
@@ -16,7 +16,6 @@ class Graph_game():
     graph: Graph
     board:Board_game
     def __init__(self):
-        self.hashme()
         self.owner_map = {0:None,1:"f",2:"b",3:"w"}
         self.owner_rev = {val:key for key,val in self.owner_map.items()}
 
@@ -47,7 +46,7 @@ class Graph_game():
             for ws in wsn:
                 if self.board.position[ws] == "f":
                     add_verts.append(ws)
-                if self.board.position[ws] != self.owner_map[owner]:
+                elif self.board.position[ws] != self.owner_map[owner]:
                     if self.owner_map[owner] == "f":
                         owner = self.owner_rev[self.board.position[ws]]
                     else:
@@ -60,6 +59,7 @@ class Graph_game():
                         my_v = added_verts[av]
                     else:
                         my_v = self.graph.add_vertex()
+                        self.board.node_map[my_v] = av
                         self.graph.vp.o[my_v] = 0
                         added_verts[av] = my_v
                     self.graph.add_edge(ws_vert,my_v)
@@ -71,6 +71,7 @@ class Graph_game():
 
     def get_actions(self):
         actions = []
+        alreadys = set()
         for node in self.graph.vertices():
             if self.graph.vp.o[node]!=0:
                 continue
@@ -83,26 +84,29 @@ class Graph_game():
                         return None
                     go_there = True
                 left_to_own += count
-            actions.append((-10000*int(go_there)-node.degree()*3+left_to_own,self.graph.vp.h[node]))
+            if self.graph.vp.h[node] not in alreadys:
+                alreadys.add(self.graph.vp.h[node])
+                deg = node.out_degree()
+                actions.append((-10000*int(go_there)-deg*3+left_to_own/deg,self.graph.vp.h[node]))
         actions.sort()
         return [x[1] for x in actions]
     
     def make_move(self,move):
         win = False
-        square_node, = find_vertex(self.graph,self.graph.vp.h,move)
+        square_node = list(find_vertex(self.graph,self.graph.vp.h,move))[0]
         del_nodes = [square_node]
         lost_neighbors = defaultdict(int)
-        for wp_node in square_node.neighbors():
-            owner = self.owner_map(self.graph.vp.o[wp_node])
+        for wp_node in square_node.all_neighbors():
+            owner = self.owner_map[self.graph.vp.o[wp_node]]
             if owner == "f":
-                self.graph.vp.o[wp_node] = self.onturn
+                self.graph.vp.o[wp_node] = self.owner_rev[self.onturn]
             elif owner == self.onturn:
-                if wp_node.degree == 1:
+                if wp_node.out_degree() == 1:
                     win = True
             else:
-                for sq_node in wp_node.neighbors():
+                for sq_node in wp_node.all_neighbors():
                     i = self.graph.vertex_index[sq_node]
-                    if sq_node.degree() - lost_neighbors[i] == 1:
+                    if sq_node.out_degree() - lost_neighbors[i] == 1:
                         del_nodes.append(sq_node)
                 del_nodes.append(wp_node)
         self.graph.remove_vertex(del_nodes)
@@ -110,7 +114,9 @@ class Graph_game():
         self.hashme()
         return win
 
-    def draw_me(self):
+    def draw_me(self,index=0):
         fill_color = self.graph.new_vertex_property("vector<float>")
-        fill_color.a = [(0,0,1,1) if x==0 else ((0,1,1,1) if x==1 else ((0,0,0,1) if x==2 else (255,0,0,1))) for x in self.graph.vp.o.a]
-        graph_draw(self.graph, vprops={"fill_color":fill_color} vertex_text=self.graph.vertex_index, output="game_state.pdf")
+        for vertex in self.graph.vertices():
+            x = self.graph.vp.o[vertex]
+            fill_color[vertex] = (0,0,1,1) if x==0 else ((0,1,1,1) if x==1 else ((0,0,0,1) if x==2 else (255,0,0,1)))
+        graph_draw(self.graph, vprops={"fill_color":fill_color}, vertex_text=self.graph.vertex_index, output=f"game_state_{index}.pdf")

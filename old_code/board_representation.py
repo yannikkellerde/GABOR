@@ -1,6 +1,5 @@
 import networkx as nx
 import math
-from graph_game import Graph_game
 from collections import defaultdict
 
 class Board_game():
@@ -8,7 +7,6 @@ class Board_game():
     position:list
     squares:int
     onturn:bool
-    graph_representation:Graph_game
 
     def __init__(self):
         self.onturn = "b"
