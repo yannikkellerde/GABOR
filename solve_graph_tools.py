@@ -30,6 +30,7 @@ class PN_search():
         self.node_count = 0
         self.alive_graphs = 0
         self.proofadds = [0,0]
+        self.real_proofadds = [0,0]
         self.drawproves = drawproves
         self.prooffile = prooffile
         self.disprooffile = disprooffile
@@ -77,9 +78,11 @@ class PN_search():
         if n[PN] == 0:
             self.provenset.add(n[HASH])
             self.proofadds[0] += 1
+            self.real_proofadds[0] += 1
         elif n[DN] == 0:
             self.disprovenset.add(n[HASH])
             self.proofadds[1] += 1
+            self.real_proofadds[1] += 1
         if len(n)>GRAPH:
             self.alive_graphs-=1
             del n[GRAPH]
@@ -170,11 +173,13 @@ class PN_search():
             else:
                 if res:
                     self.provenset.add(res)
+                    self.proofadds[0]+= 1
                     if not n[PROOFNODE]:
                         continue
                     child = [0,math.inf]
                 else:
                     self.disprovenset.add(res)
+                    self.proofadds[1]+= 1
                     if n[PROOFNODE]:
                         continue
                     child = [math.inf,0]
@@ -185,7 +190,14 @@ class PN_search():
         del n[GRAPH]
         self.alive_graphs -= 1
 
-    def pn_search(self,onturn_proves=True):
+    def do_sub_pn(self,proofnode):
+        sub_pn = PN_search(game=self.game,drawproves=self.drawproves,prooffile="",disprooffile="")
+        sub_pn.pn_search(onturn_proves=proofnode,verbose=False,save=False)
+        self.provenset.update(sub_pn.provenset)
+        self.disprovenset.update(sub_pn.disprovenset)
+        return sub_pn.root[PN]==0
+
+    def pn_search(self,onturn_proves=True,verbose=True,save=True):
         hashval = self.game.hash
         self.root = [1,1,hashval,[],[],onturn_proves,self.game.graph]
         self.alive_graphs+=1
@@ -195,22 +207,31 @@ class PN_search():
         times = {"select_most_proving":[],"expand":[],"update_anchestors":[],"whole_it":[]}
         starts = {}
         while self.root[PN]!=0 and self.root[DN]!=0:
-            if c % 10 == 1:
-                print("iteration:",c)
-                print("node_count:",self.node_count)
-                print("graphs:",self.alive_graphs)
-                for key,value in times.items():
-                    print(key,np.mean(value))
-                print(" ".join([str(x[PN]) for x in self.root[CHILDREN]]))
-                print(" ".join([str(x[DN]) for x in self.root[CHILDREN]]))
-                if c % 1000000 == 0:
-                    gc.collect()
-                print("Proofadds: {}".format(self.proofadds))
-                if not util.resources_avaliable():
-                    return False
-                times = {"select_most_proving":[],"expand":[],"update_anchestors":[],"whole_it":[]}
-            if c%100==0:
-                save_sets((self.provenset,self.prooffile),(self.disprovenset,self.disprooffile))
+            if verbose:
+                if c % 10 == 1:
+                    print("iteration:",c)
+                    print("node_count:",self.node_count)
+                    print("graphs:",self.alive_graphs)
+                    for key,value in times.items():
+                        print(key,np.mean(value))
+                    cur = self.root
+                    depth = 0
+                    while len(cur[CHILDREN]) == 1:
+                        cur = cur[CHILDREN][0]
+                        depth += 1
+                    print("depth:",depth)
+                    print(" ".join([str(x[PN]) for x in self.root[cur]]))
+                    print(" ".join([str(x[DN]) for x in self.root[cur]]))
+                    if c % 1000000 == 0:
+                        gc.collect()
+                    print("Proofadds: {}".format(self.proofadds))
+                    print("Real proofadds: {}".format(self.real_proofadds))
+                    if not util.resources_avaliable():
+                        return False
+                    times = {"select_most_proving":[],"expand":[],"update_anchestors":[],"whole_it":[]}
+            if save:
+                if c%100==0:
+                    save_sets((self.provenset,self.prooffile),(self.disprovenset,self.disprooffile))
             starts["whole_it"] = time.perf_counter()
             c+=1
             starts["select_most_proving"] = time.perf_counter()
@@ -223,12 +244,14 @@ class PN_search():
             self.update_anchestors(most_proving)
             times["update_anchestors"].append(time.perf_counter()-starts["update_anchestors"])
             times["whole_it"].append(time.perf_counter()-starts["whole_it"])
-        print("iteration:",c)
-        print("node_count:",self.node_count)
-        print("graphs:",self.alive_graphs)
-        print("Proofadds: {}".format(self.proofadds))
-        print(self.root[PN], self.root[DN], self.node_count)
-        save_sets((self.provenset,self.prooffile),(self.disprovenset,self.disprooffile))
+        if verbose:
+            print("iteration:",c)
+            print("node_count:",self.node_count)
+            print("graphs:",self.alive_graphs)
+            print("Proofadds: {}".format(self.proofadds))
+            print(self.root[PN], self.root[DN], self.node_count)
+        if save:
+            save_sets((self.provenset,self.prooffile),(self.disprovenset,self.disprooffile))
         return True
 
 
