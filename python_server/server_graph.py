@@ -1,7 +1,7 @@
 import sys
 sys.path.append("..")
 sys.path.append(".")
-from graph_games import Tic_tac_toe, Qango6x6
+from graph_tools_games import Tic_tac_toe, Qango6x6
 import math
 import pickle
 import json
@@ -14,7 +14,7 @@ from functools import reduce
 import os
 
 FILE = "python_server/explore_wins.html"
-PORT = 8080
+PORT = 8081
 
 class Post_handler(SimpleHTTPRequestHandler):
 
@@ -58,15 +58,15 @@ class Post_handler(SimpleHTTPRequestHandler):
         data_str = self.rfile.read(length)
         data = json.loads(data_str)
         real_pos = [("f" if x==0 else ("b" if x==2 else "w")) for x in data["position"]]
-        game.board_representation.set_position(real_pos,"b" if data["onturn"]==1 else "w")
-        game.board_representation.draw_me()
+        game.board.set_position(real_pos,"b" if data["onturn"]==1 else "w")
         moves = game.get_actions()
         if moves is None:
             moves = []
-        game.board_representation.create_node_hash_map()
-        board_moves = [game.board_representation.convert_move(x) for x in moves]
-        curval = None if game.hash not in game.board_representation.ttable else game.board_representation.ttable[game.hash]
-        moves_with_eval = [("current",curval)]+[(game.board_representation.convert_move(x),game.board_representation.check_move_val(x)) for x in moves]
+        game.board.create_node_hash_map()
+        board_moves = [game.board.convert_move(x) for x in moves]
+        game.draw_me()
+        curval = game.board.check_move_val(None)
+        moves_with_eval = [("current",curval)]+[(game.board.convert_move(x),game.board.check_move_val(x)) for x in moves]
         # send the message back
         self._set_headers()
         self.wfile.write(json.dumps({"moves":moves_with_eval}).encode())
@@ -80,17 +80,24 @@ def open_browser():
     thread.start()
 
 def start_server():
+    global PORT
     """Start the server."""
-    server_address = ("", PORT)
-    server = HTTPServer(server_address, Post_handler)
+    while 1:
+        server_address = ("", PORT)
+        try:
+            server = HTTPServer(server_address, Post_handler)
+            break
+        except OSError as e:
+            PORT+=1
     server.serve_forever()
-
-game = Qango6x6()
-with open("../alpha_beta.pkl","rb") as f:
-    game.board_representation.ttable = pickle.load(f)
-endgame_depth = 0
 
 if __name__ == "__main__":
     my_folder = sys.argv[1]
+    if "qango" in my_folder:
+        game = Qango6x6()
+    else:
+        game = Tic_tac_toe()
+    game.board.load_sets("../proofsets/burgregelp.pkl","../proofsets/burgregeld.pkl")
+    endgame_depth = 0
     open_browser()
     start_server()

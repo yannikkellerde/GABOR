@@ -1,8 +1,9 @@
 import math
 import util
 import gc
-import sys
-from graph_tools_games import Tic_tac_toe
+import pickle
+import os,sys
+from graph_tools_games import Tic_tac_toe,Qango6x6
 from graph_tools_game import Graph_game
 from util import draw_board,check_position_consistent
 from data_magic import save_sets
@@ -16,34 +17,34 @@ DN = 1 # int
 HASH = 2 # int
 PARENTS = 3 # List of Nodes(which are lists)
 CHILDREN = 4 # List of tuples containing move made and Node (which is a lists)
-GRAPH = 5 # A graph tools graph or None
-PROOFNODE = 6 # Bool, are we in a proof node or disproof node
+PROOFNODE = 5 # Bool, are we in a proof node or disproof node
+GRAPH = 6 # A graph tools graph or None
+
 
 class PN_search():
-    def __init__(self, game:Graph_game, drawproves=True,prooffile="provenset.txt",disprooffile="disprovenset.txt"):
+    def __init__(self, game:Graph_game, drawproves=False,prooffile="proofsets/provenset.pkl",disprooffile="proofsets/disprovenset.pkl"):
         self.game = game
-        self.startdepth = startdepth
         self.ttable = {}
         self.provenset = set()
         self.disprovenset = set()
-        self.endgame_depth = endgame_depth
         self.node_count = 0
+        self.alive_graphs = 0
         self.proofadds = [0,0]
-        self.endgame_proofadds = [0,0]
         self.drawproves = drawproves
         self.prooffile = prooffile
         self.disprooffile = disprooffile
+        os.makedirs(os.path.dirname(self.prooffile),exist_ok=True)
         self.loadsets()
 
     def loadsets(self):
         try:
-            with open(self.prooffile,"r") as file:
-                self.provenset = set([int(x) for x in file.read().split(",")[:-1]])
+            with open(self.prooffile,"rb") as file:
+                self.provenset = pickle.load(file)
         except Exception as e:
             print(e)
         try:
-            with open(self.disprooffile,"r") as file:
-                self.disprovenset = set([int(x) for x in file.read().split(",")[:-1]])
+            with open(self.disprooffile,"rb") as file:
+                self.disprovenset = pickle.load(file)
         except Exception as e:
             print(e)
     
@@ -67,7 +68,7 @@ class PN_search():
                 if p[CHILDREN][i]==n:
                     del p[CHILDREN][i]
                     break
-        for _,c in ch:
+        for c in ch:
             if len(c)>PARENTS:
                 c[PARENTS].remove(n)
                 if len(c[PARENTS])==0:
@@ -79,12 +80,15 @@ class PN_search():
         elif n[DN] == 0:
             self.disprovenset.add(n[HASH])
             self.proofadds[1] += 1
+        if len(n)>GRAPH:
+            self.alive_graphs-=1
+            del n[GRAPH]
+        del n[PROOFNODE]
         del n[CHILDREN]
         del n[PARENTS]
         # Do not use n aferwards
     
     def update_anchestors(self, n):
-        #print(depth,n[HASH])
         old_pn = n[PN]
         old_dn = n[DN]
         self.set_pn_dn(n)
@@ -92,7 +96,7 @@ class PN_search():
             return
         for p in n[PARENTS].copy():
             if len(p)>3:
-                self.update_anchestors(p,depth-1)
+                self.update_anchestors(p)
         if (n[PN] == 0 or n[DN] == 0) and len(n)>PARENTS:
             self.delete_node(n, n[PARENTS], n[CHILDREN])
 
@@ -110,20 +114,25 @@ class PN_search():
                     if val > child[DN]:
                         best = child
                         val = child[DN]
-            n = best[1]
+            n = best
         return n
 
-    def evaluate(self,hashval,graph:Graph):
+    def evaluate(self,n,hashval):
         if hashval in self.provenset:
             return True
         elif hashval in self.disprovenset:
             return False
-        elif graph.num_vertices()==0:
+        elif self.game.graph.num_vertices()==0:
             return self.drawproves
-        return None
+        orig_graph = Graph(self.game.graph)
+        res = self.game.forced_move_search()
+        if n[PROOFNODE] and res is not None:
+            res = not res
+        self.game.graph = orig_graph
+        return res
 
     def expand(self, n):
-        self.game.set_graph(Graph(n[GRAPH]))
+        self.game.graph = Graph(n[GRAPH])
         moves = self.game.get_actions()
         if moves is None:
             if n[PROOFNODE]:
@@ -133,7 +142,6 @@ class PN_search():
                 n[PN] = math.inf
                 n[DN] = 0
             del n[GRAPH]
-            del n[CHILDREN]
             return
         if len(moves)==0:
             raise Exception("No moves avaliable")
@@ -141,9 +149,9 @@ class PN_search():
         for move in moves:
             if move != moves[0]:
                 if move == moves[-1]:
-                    self.game.set_graph(n[GRAPH])
+                    self.game.graph = n[GRAPH]
                 else:
-                    self.game.set_graph(Graph(n[GRAPH]))
+                    self.game.graph = Graph(n[GRAPH])
             self.game.make_move(move)
             hashval = self.game.hash
             if hashval in knownhashvals:
@@ -154,16 +162,19 @@ class PN_search():
                 n[CHILDREN].append(found)
                 continue
             knownhashvals.add(hashval)
-            res = self.evaluate(hashval,self.game.graph)
+            res = self.evaluate(n,hashval)
             if res is None:
-                child = [1,1,hashval,[n],[],self.game.graph,not n[PROOFNODE]]
+                child = [1,1,hashval,[n],[],not n[PROOFNODE],self.game.graph]
+                self.alive_graphs += 1
                 self.ttable[hashval]=child
             else:
                 if res:
+                    self.provenset.add(res)
                     if not n[PROOFNODE]:
                         continue
                     child = [0,math.inf]
-                elif hashval in self.disprovenset:
+                else:
+                    self.disprovenset.add(res)
                     if n[PROOFNODE]:
                         continue
                     child = [math.inf,0]
@@ -171,32 +182,35 @@ class PN_search():
             self.node_count += 1
             if res==n[PROOFNODE]:
                 break
-        n[GRAPH] = None
+        del n[GRAPH]
+        self.alive_graphs -= 1
 
-    def pn_search(self):
+    def pn_search(self,onturn_proves=True):
         hashval = self.game.hash
-        self.root = [1,1,hashval,[],[],self.game.graph,True]
+        self.root = [1,1,hashval,[],[],onturn_proves,self.game.graph]
+        self.alive_graphs+=1
         self.node_count += 1
         self.ttable[hashval] = self.root
         c = 1
         times = {"select_most_proving":[],"expand":[],"update_anchestors":[],"whole_it":[]}
         starts = {}
         while self.root[PN]!=0 and self.root[DN]!=0:
-            if c % 100 == 1:
+            if c % 10 == 1:
                 print("iteration:",c)
+                print("node_count:",self.node_count)
+                print("graphs:",self.alive_graphs)
                 for key,value in times.items():
                     print(key,np.mean(value))
                 print(" ".join([str(x[PN]) for x in self.root[CHILDREN]]))
                 print(" ".join([str(x[DN]) for x in self.root[CHILDREN]]))
                 if c % 1000000 == 0:
                     gc.collect()
-                print("Normal Proofadds: {}".format(self.proofadds))
-                print("Endgame Proofadds: {}".format(self.endgame_proofadds))
+                print("Proofadds: {}".format(self.proofadds))
                 if not util.resources_avaliable():
                     return False
-            if c%100000==0:
-                save_sets((self.provenset,self.prooffile),(self.disprovenset,self.disprooffile),
-                          (self.endgame_provenset,self.endgame_prooffile),(self.endgame_disprovenset,self.endgame_disprooffile))
+                times = {"select_most_proving":[],"expand":[],"update_anchestors":[],"whole_it":[]}
+            if c%100==0:
+                save_sets((self.provenset,self.prooffile),(self.disprovenset,self.disprooffile))
             starts["whole_it"] = time.perf_counter()
             c+=1
             starts["select_most_proving"] = time.perf_counter()
@@ -209,5 +223,24 @@ class PN_search():
             self.update_anchestors(most_proving)
             times["update_anchestors"].append(time.perf_counter()-starts["update_anchestors"])
             times["whole_it"].append(time.perf_counter()-starts["whole_it"])
+        print("iteration:",c)
+        print("node_count:",self.node_count)
+        print("graphs:",self.alive_graphs)
+        print("Proofadds: {}".format(self.proofadds))
         print(self.root[PN], self.root[DN], self.node_count)
+        save_sets((self.provenset,self.prooffile),(self.disprovenset,self.disprooffile))
         return True
+
+
+if __name__ == "__main__":
+    g = Qango6x6()
+    g.board.position = list("ffffff"
+                            "ffffff"
+                            "ffffff"
+                            "ffffff"
+                            "fffbff"
+                            "ffffff")
+    g.board.onturn = "w"
+    g.graph_from_board()
+    pn_s = PN_search(g,prooffile="proofsets/burgregelp.pkl",disprooffile="proofsets/burgregeld.pkl")
+    pn_s.pn_search(onturn_proves=False)

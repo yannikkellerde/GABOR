@@ -76,7 +76,7 @@ function show_moves(){
         for (var i=0;i<miteval.length;i++){
             var move = miteval[i][0];
             var evaluation = miteval[i][1];
-            var evalconvert = {"u":"Unknown",0:"Draw",1:"Black wins","-1":"White wins"}
+            var evalconvert = {"u":"Unknown",0:"Draw",1:"Black wins","-1":"White wins or draw",2:"White wins"}
             var tr = document.createElement("tr");
             var move_elem = document.createElement("td");
             var eval_elem = document.createElement("td");

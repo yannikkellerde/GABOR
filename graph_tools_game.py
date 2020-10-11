@@ -77,44 +77,128 @@ class Graph_game():
                 continue
             left_to_own = 0
             go_there = False
+            neigh_indices = set()
             for target in node.all_neighbors():
+                neigh_indices.add(int(target))
                 count = target.out_degree()
                 if count==1:
-                    if self.owner_map[self.graph.vp.o[node]] == self.onturn:
+                    if self.owner_map[self.graph.vp.o[target]] == self.onturn:
                         return None
                     go_there = True
                 left_to_own += count
             if self.graph.vp.h[node] not in alreadys:
                 alreadys.add(self.graph.vp.h[node])
                 deg = node.out_degree()
-                actions.append((-10000*int(go_there)-deg*3+left_to_own/deg,self.graph.vp.h[node]))
+                actions.append((-10000*int(go_there)-deg+left_to_own/deg,self.graph.vp.h[node],neigh_indices))
         actions.sort()
+        # Remove superseeded actions
+        for i in range(len(actions)-1,-1,-1):
+            for j in range(i-1,-1,-1):
+                if actions[i][2].issubset(actions[j][2]):
+                    del actions[i]
+                    break
         return [x[1] for x in actions]
     
-    def make_move(self,move):
-        win = False
-        square_node = list(find_vertex(self.graph,self.graph.vp.h,move))[0]
+    def make_move_vertex(self,square_node):
         del_nodes = [square_node]
         lost_neighbors = defaultdict(int)
         for wp_node in square_node.all_neighbors():
             owner = self.owner_map[self.graph.vp.o[wp_node]]
             if owner == "f":
                 self.graph.vp.o[wp_node] = self.owner_rev[self.onturn]
-            elif owner == self.onturn:
-                if wp_node.out_degree() == 1:
-                    win = True
-            else:
+            elif owner != self.onturn:
                 for sq_node in wp_node.all_neighbors():
                     i = self.graph.vertex_index[sq_node]
                     if sq_node.out_degree() - lost_neighbors[i] == 1:
                         del_nodes.append(sq_node)
+                    lost_neighbors[i]+=1
                 del_nodes.append(wp_node)
-        self.graph.remove_vertex(del_nodes)
+        del_inds = [int(x) for x in del_nodes]
+        self.graph.remove_vertex(del_nodes,fast=True)
         self.graph.gp["b"] = not self.graph.gp["b"]
-        self.hashme()
-        return win
+        return del_inds
+
+    def track_vertex(self,vert_index,del_inds):
+        if vert_index<self.graph.num_vertices():
+            if vert_index in del_inds:
+                raise Exception("Can't track deleted vertex")
+            return vert_index
+        ind_list = list(range(self.graph.num_vertices()))
+        for ind in sorted(del_inds):
+            if ind==len(ind_list):
+                ind_list.append(None)
+            else:
+                ind_list.append(ind_list[ind])
+                ind_list[ind] = None
+        return ind_list[vert_index]
+
+    def make_move(self,move,hashme=True):
+        square_node = list(find_vertex(self.graph,self.graph.vp.h,move))[0]
+        self.make_move_vertex(square_node)
+        if hashme:
+            self.hashme()
+
+    def forced_move_search(self):
+        moves = set()
+        vert_inds = dict()
+        double_threat = set()
+        force_me_to = None
+        loss = False
+        for vert in self.graph.vertices():
+            deg = vert.out_degree()
+            owner = self.owner_map[self.graph.vp.o[vert]]
+            if owner != None:
+                if owner == self.onturn or owner=="f":
+                    if deg == 1:
+                        return True
+                    elif deg == 2:
+                        nod1,nod2 = vert.all_neighbors()
+                        ind1,ind2 = int(nod1),int(nod2)
+                        if ind1 in vert_inds:
+                            double_threat.add(ind1)
+                        if ind2 in vert_inds:
+                            double_threat.add(ind2)
+                        vert_inds[ind1] = ind2
+                        vert_inds[ind2] = ind1
+                else:
+                    if deg == 1:
+                        sq, = vert.all_neighbors()
+                        ind = self.graph.vertex_index[sq]
+                        if force_me_to is None:
+                            force_me_to = ind
+                        else:
+                            if ind != force_me_to:
+                                loss = True
+        if loss:
+            return False
+        if force_me_to is not None:
+            if force_me_to in vert_inds:
+                vert_inds = {force_me_to:vert_inds[force_me_to]}
+            else:
+                return None
+        if len(set(vert_inds).intersection(double_threat))>0:
+            return True
+        if len(vert_inds) > 1:
+            orig_graph = Graph(self.graph)
+        for i,ind in enumerate(vert_inds.keys()):
+            if i!=0:
+                if i==len(vert_inds)-1:
+                    self.graph = orig_graph
+                else:
+                    self.graph = Graph(orig_graph)
+            vert = self.graph.vertex(ind)
+            del_inds = self.make_move_vertex(vert)
+            reply_ind = self.track_vertex(vert_inds[ind],del_inds)
+            reply_vert = self.graph.vertex(reply_ind)
+            self.make_move_vertex(reply_vert)
+            if self.forced_move_search():
+                return True
+        return None
 
     def draw_me(self,index=0):
+        if self.graph.num_vertices()==0:
+            print("WARNING: Trying to draw graph without vertices")
+            return
         fill_color = self.graph.new_vertex_property("vector<float>")
         for vertex in self.graph.vertices():
             x = self.graph.vp.o[vertex]

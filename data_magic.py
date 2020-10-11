@@ -1,5 +1,6 @@
 import json
 import math
+import pickle
 import sys
 
 def replacements(root, parent_pos):
@@ -82,9 +83,8 @@ def save_solution(node, file, game, parent_pos):
 
 def save_sets(*sets_with_file):
     for ps,pf in sets_with_file:
-        with open(pf,"w") as file:
-            for d in ps:
-                file.write(str(d)+",")
+        with open(pf,"wb") as file:
+            pickle.dump(ps,file)
 
 def save_tree_depth(node, file, game, parent_pos, depth, maxdepth):
     if parent_pos is None:
