@@ -190,13 +190,6 @@ class PN_search():
         del n[GRAPH]
         self.alive_graphs -= 1
 
-    def do_sub_pn(self,proofnode):
-        sub_pn = PN_search(game=self.game,drawproves=self.drawproves,prooffile="",disprooffile="")
-        sub_pn.pn_search(onturn_proves=proofnode,verbose=False,save=False)
-        self.provenset.update(sub_pn.provenset)
-        self.disprovenset.update(sub_pn.disprovenset)
-        return sub_pn.root[PN]==0
-
     def pn_search(self,onturn_proves=True,verbose=True,save=True):
         hashval = self.game.hash
         self.root = [1,1,hashval,[],[],onturn_proves,self.game.graph]
