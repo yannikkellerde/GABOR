@@ -127,12 +127,7 @@ class PN_search():
             return False
         elif self.game.graph.num_vertices()==0:
             return self.drawproves
-        orig_graph = Graph(self.game.graph)
-        res = self.game.forced_move_search()
-        if n[PROOFNODE] and res is not None:
-            res = not res
-        self.game.graph = orig_graph
-        return res
+        return None
 
     def expand(self, n):
         self.game.graph = Graph(n[GRAPH])
@@ -147,7 +142,20 @@ class PN_search():
             del n[GRAPH]
             return
         if len(moves)==0:
-            raise Exception("No moves avaliable")
+            if self.drawproves:
+                n[PN] = 0
+                n[DN] = math.inf
+            else:
+                n[PN] = math.inf
+                n[DN] = 0
+            del n[GRAPH]
+            return
+        self.game.graph.gp["b"] = not self.game.graph.gp["b"]
+        defense_vertices,has_threat,_ = self.game.threat_search()
+        self.game.graph.gp["b"] = not self.game.graph.gp["b"]
+        if has_threat:
+            defense_hashes = self.game.graph.vp.h.get_array()[list(defense_vertices)]
+            moves = [move for move in moves if move in defense_hashes]
         knownhashvals = set()
         for move in moves:
             if move != moves[0]:
@@ -213,8 +221,8 @@ class PN_search():
                         cur = cur[CHILDREN][0]
                         depth += 1
                     print("depth:",depth)
-                    print(" ".join([str(x[PN]) for x in self.root[cur]]))
-                    print(" ".join([str(x[DN]) for x in self.root[cur]]))
+                    print(" ".join([str(x[PN]) for x in cur[CHILDREN]]))
+                    print(" ".join([str(x[DN]) for x in cur[CHILDREN]]))
                     if c % 1000000 == 0:
                         gc.collect()
                     print("Proofadds: {}".format(self.proofadds))

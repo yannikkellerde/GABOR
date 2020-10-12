@@ -7,17 +7,16 @@ import time
 import numpy as np
 import pickle
 import matplotlib.pyplot as plt
-from graph_board_game import Board_game
 
 from graph_tool.all import *
 from graph_tools_hashing import wl_hash
 
 class Graph_game():
     graph: Graph
-    board:Board_game
     def __init__(self):
         self.owner_map = {0:None,1:"f",2:"b",3:"w"}
         self.owner_rev = {val:key for key,val in self.owner_map.items()}
+        self.known_gain_sets = []
 
     @property
     def hash(self):
@@ -139,7 +138,15 @@ class Graph_game():
     def negate_onturn(self,onturn):
         return "b" if onturn=="w" else ("w" if onturn=="b" else onturn)
         
-    def threat_search(self,last_gain=None,last_cost=None,known_threats=dict(),gain=set(),cost=set()):
+    def threat_search(self,last_gain=None,last_cost=None,known_threats=None,gain=None,cost=None):
+        if known_threats is None:
+            known_threats=dict()
+        if gain is None:
+            gain = set()
+        if cost is None:
+            cost = set()
+        if gain in self.known_gain_sets:
+            return set(),False,[]
         legit_defenses = set()
         movelines = []
         winlines = []
@@ -148,17 +155,19 @@ class Graph_game():
         double_threat = dict()
         done = False
         if last_gain is None:
+            self.known_gain_sets = []
             for vert in self.graph.vertices():
                 deg = vert.out_degree()
                 owner = self.owner_map[self.graph.vp.o[vert]]
                 if owner != None:
                     if owner == self.onturn or owner=="f":
                         if deg == 1:
-                            sq, = neigh
+                            sq, = vert.all_neighbors()
+                            ind = int(sq)
                             use_defenses = set()
-                            use_defenses.add(sq)
+                            use_defenses.add(ind)
                             winlines.append(use_defenses)
-                            movelines.append([last_gain,sq,"deg1"])
+                            movelines.append([last_gain,ind,"deg1"])
                             done = True
                             break
                         elif deg == 2:
@@ -173,10 +182,10 @@ class Graph_game():
                     else:
                         if deg == 1:
                             sq, = vert.all_neighbors()
-                            ind = self.graph.vertex_index[sq]
+                            ind = int(sq)
                             if force_me_to is None:
                                 force_me_to = ind
-                                legit_defenses.add(int(sq))
+                                legit_defenses.add(ind)
                             else:
                                 if ind != force_me_to:
                                     done = True
@@ -185,6 +194,7 @@ class Graph_game():
                             legit_defenses.add(int(sq1))
                             legit_defenses.add(int(sq2))
         else:
+            self.known_gain_sets.append(gain)
             rest_squares = set()
             for wp_ind in self.graph.get_all_neighbors(last_cost):
                 vert = self.graph.vertex(wp_ind)
@@ -198,8 +208,13 @@ class Graph_game():
                         frees.add(sq_ind)
                 else:
                     if len(frees)==1:
-                        force_me_to, = frees
-                        legit_defenses.add(force_me_to)
+                        ind, = frees
+                        legit_defenses.add(ind)
+                        if force_me_to is None:
+                            force_me_to = ind
+                        else:
+                            if ind != force_me_to:
+                                done = True
                     elif len(frees)==2:
                         for f in frees:
                             legit_defenses.add(f)
@@ -258,7 +273,7 @@ class Graph_game():
                 use_gain.add(ind)
                 th_copy = known_threats.copy()
                 del th_copy[ind]
-                under_defs,win_here,move_here = self.threat_search2(last_gain=ind,last_cost=vert_inds[ind],gain=use_gain,cost=use_cost,known_threats=th_copy)
+                under_defs,win_here,move_here = self.threat_search(last_gain=ind,last_cost=vert_inds[ind],gain=use_gain,cost=use_cost,known_threats=th_copy)
                 if win_here:
                     for move in move_here:
                         movelines.append([last_gain]+move)

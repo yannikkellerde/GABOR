@@ -72,11 +72,11 @@ function show_moves(){
         console.log(server_data)
         var miteval = [];
         curval = server_data.moves[0][1]
-        miteval = server_data.moves.slice(1)
+        miteval = server_data.moves.slice()
         for (var i=0;i<miteval.length;i++){
             var move = miteval[i][0];
             var evaluation = miteval[i][1];
-            var evalconvert = {"u":"Unknown",0:"Draw",1:"Black wins","-1":"White wins or draw",2:"White wins"}
+            var evalconvert = {"u":"Unknown",0:"Draw",1:"Black wins (Proofset)","-1":"White wins or draw",2:"White wins (Threat search)",3:"Black wins (Threat search)",4:"White wins (Forced Move)",5:"Black wins (Forced Move)"}
             var tr = document.createElement("tr");
             var move_elem = document.createElement("td");
             var eval_elem = document.createElement("td");

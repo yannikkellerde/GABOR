@@ -59,18 +59,38 @@ class Post_handler(SimpleHTTPRequestHandler):
         data = json.loads(data_str)
         real_pos = [("f" if x==0 else ("b" if x==2 else "w")) for x in data["position"]]
         game.board.set_position(real_pos,"b" if data["onturn"]==1 else "w")
+        game.board.draw_me()
         moves = game.get_actions()
         if moves is None:
             moves = []
         game.board.create_node_hash_map()
         board_moves = [game.board.convert_move(x) for x in moves]
         game.draw_me()
-        curval = game.board.check_move_val(None)
-        moves_with_eval = [("current",curval)]+[(game.board.convert_move(x),game.board.check_move_val(x)) for x in moves]
+        evals = game.board.check_move_val(moves)
+        moves_with_eval = list(zip(board_moves, evals))
         # send the message back
         self._set_headers()
         self.wfile.write(json.dumps({"moves":moves_with_eval}).encode())
 
+def self_contained_evaluator(real_pos,onturn):
+    p = list( "ffffff"
+                  "ffffff"
+                  "ffffff"
+                  "ffffff"
+                  "ffwbff"
+                  "ffffff")
+    if real_pos!=p:
+        return
+    ingame = Qango6x6()
+    ingame.board.load_sets("../proofsets/burgregelp.pkl","../proofsets/burgregeld.pkl")
+    print(real_pos,onturn)
+    ingame.board.set_position(real_pos,onturn)
+    ingame.graph.gp["b"] = not ingame.graph.gp["b"]
+    defense_vertices,has_threat,movelines = ingame.threat_search()
+    for line in movelines:
+        print([d if type(d)==str else (d,(ingame.board.node_map[d]%6,ingame.board.node_map[d]//6)) for d in line[1:]])
+    print("Self contained",has_threat,len(defense_vertices),ingame.onturn)
+    ingame.graph.gp["b"] = not ingame.graph.gp["b"]
 
 def open_browser():
     """Start a browser after waiting for half a second."""

@@ -55,6 +55,14 @@ def test_threat_search():
                                 "ffffwf"
                                 "wbwfbf"
                                 "ffffwf")
+
+
+    game.board.position = list( "ffffff"
+                                "ffffff"
+                                "fwffff"
+                                "ffbwff"
+                                "ffwbbf"
+                                "ffffbf")
     game.board.onturn = "b"
     game.graph_from_board()
     game.draw_me(-1)
@@ -64,6 +72,12 @@ def test_threat_search():
     print(win,len(defenses),defenses)
     board_view = []
     for d in defenses:
+        val = game.board.node_map[d]
+        board_view.append((val%6,val//6))
+    print(board_view)
+    not_defs = set(game.board.node_map.keys())-defenses
+    board_view = []
+    for d in not_defs:
         val = game.board.node_map[d]
         board_view.append((val%6,val//6))
     print(board_view)
