@@ -18,7 +18,7 @@ HASH = 2 # int
 PARENTS = 3 # List of Nodes(which are lists)
 CHILDREN = 4 # List of tuples containing move made and Node (which is a lists)
 PROOFNODE = 5 # Bool, are we in a proof node or disproof node
-GRAPH = 6 # A graph tools graph or None
+STORAGE = 6 # A tuple containing 1. an owner map, 2. a filter map, 3. onturn bool
 
 
 class PN_search():
@@ -83,9 +83,9 @@ class PN_search():
             self.disprovenset.add(n[HASH])
             self.proofadds[1] += 1
             self.real_proofadds[1] += 1
-        if len(n)>GRAPH:
+        if len(n)>STORAGE:
             self.alive_graphs-=1
-            del n[GRAPH]
+            del n[STORAGE]
         del n[PROOFNODE]
         del n[CHILDREN]
         del n[PARENTS]
@@ -125,12 +125,12 @@ class PN_search():
             return True
         elif hashval in self.disprovenset:
             return False
-        elif self.game.graph.num_vertices()==0:
+        elif self.game.view.num_vertices()==0:
             return self.drawproves
         return None
 
     def expand(self, n):
-        self.game.graph = Graph(n[GRAPH])
+        self.game.load_storage(n[STORAGE])
         moves = self.game.get_actions()
         if moves is None:
             if n[PROOFNODE]:
@@ -139,7 +139,7 @@ class PN_search():
             else:
                 n[PN] = math.inf
                 n[DN] = 0
-            del n[GRAPH]
+            del n[STORAGE]
             return
         if len(moves)==0:
             if self.drawproves:
@@ -148,22 +148,19 @@ class PN_search():
             else:
                 n[PN] = math.inf
                 n[DN] = 0
-            del n[GRAPH]
+            del n[STORAGE]
             return
-        self.game.graph.gp["b"] = not self.game.graph.gp["b"]
+        self.game.view.gp["b"] = not self.game.view.gp["b"]
         defense_vertices,has_threat,_ = self.game.threat_search()
-        self.game.graph.gp["b"] = not self.game.graph.gp["b"]
+        self.game.view.gp["b"] = not self.game.view.gp["b"]
         if has_threat:
-            defense_hashes = self.game.graph.vp.h.get_array()[list(defense_vertices)]
-            moves = [move for move in moves if move in defense_hashes]
+            moves = [move for move in moves if move in defense_vertices]
         knownhashvals = set()
         for move in moves:
             if move != moves[0]:
-                if move == moves[-1]:
-                    self.game.graph = n[GRAPH]
-                else:
-                    self.game.graph = Graph(n[GRAPH])
+                self.game.load_storage(n[STORAGE])
             self.game.make_move(move)
+            self.game.hashme()
             hashval = self.game.hash
             if hashval in knownhashvals:
                 continue
@@ -175,7 +172,7 @@ class PN_search():
             knownhashvals.add(hashval)
             res = self.evaluate(n,hashval)
             if res is None:
-                child = [1,1,hashval,[n],[],not n[PROOFNODE],self.game.graph]
+                child = [1,1,hashval,[n],[],not n[PROOFNODE],self.game.extract_storage()]
                 self.alive_graphs += 1
                 self.ttable[hashval]=child
             else:
@@ -195,12 +192,13 @@ class PN_search():
             self.node_count += 1
             if res==n[PROOFNODE]:
                 break
-        del n[GRAPH]
+        del n[STORAGE]
         self.alive_graphs -= 1
 
     def pn_search(self,onturn_proves=True,verbose=True,save=True):
+        self.game.hashme()
         hashval = self.game.hash
-        self.root = [1,1,hashval,[],[],onturn_proves,self.game.graph]
+        self.root = [1,1,hashval,[],[],onturn_proves,self.extract_storage()]
         self.alive_graphs+=1
         self.node_count += 1
         self.ttable[hashval] = self.root

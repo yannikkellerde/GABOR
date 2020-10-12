@@ -13,6 +13,7 @@ from graph_tools_hashing import wl_hash
 
 class Graph_game():
     graph: Graph
+    view: GraphView
     def __init__(self):
         self.owner_map = {0:None,1:"f",2:"b",3:"w"}
         self.owner_rev = {val:key for key,val in self.owner_map.items()}
@@ -20,25 +21,35 @@ class Graph_game():
 
     @property
     def hash(self):
-        return self.graph.gp["h"]
+        return self.view.gp["h"]
 
     @property
     def onturn(self):
-        return "b" if self.graph.gp["b"] else "w"
+        return "b" if self.view.gp["b"] else "w"
 
     def hashme(self):
-        wl_hash(self.graph,self.graph.vp.o,iterations=3)
+        wl_hash(self.view,self.view.vp.o,iterations=3)
+
+    def load_storage(self,storage):
+        self.graph.vp.f = storage[1].copy()
+        self.view = GraphView(self.graph,vfilt=self.graph.vp.f)
+        self.view.vp.o = storage[0].copy()
+        self.view.gp["b"] = storage[2]
+
+    def extract_storage(self):
+        return (self.view.vp.o.copy(),self.view.vp.f.copy(),self.view.gp["b"])
 
     def graph_from_board(self):
         self.board.node_map = dict()
+        self.board.wp_map = dict()
         self.graph = Graph(directed=False)
         self.graph.gp["h"] = self.graph.new_graph_property("long")
         self.graph.gp["b"] = self.graph.new_graph_property("bool")
         self.graph.gp["b"] = True if self.board.onturn=="b" else False
         owner_prop = self.graph.new_vertex_property("short")
         self.graph.vp.o = owner_prop
-        hash_prop = self.graph.new_vertex_property("long")
-        self.graph.vp.h = hash_prop
+        filt_prop = self.graph.new_vertex_property("bool")
+        self.graph.vp.f = filt_prop
         added_verts = dict()
         for i,wsn in enumerate(list(self.board.winsquarenums)):
             owner = self.owner_rev["f"]
@@ -53,6 +64,7 @@ class Graph_game():
                         break
             else:
                 ws_vert = self.graph.add_vertex()
+                self.board.wp_map[int(ws_vert)] = wsn
                 self.graph.vp.o[ws_vert] = owner
                 for av in add_verts:
                     if av in added_verts:
@@ -63,17 +75,13 @@ class Graph_game():
                         self.graph.vp.o[my_v] = 0
                         added_verts[av] = my_v
                     self.graph.add_edge(ws_vert,my_v)
-        self.hashme()
-
-    def set_graph(self,G:Graph):
-        self.graph = G
-        self.hashme()
+        self.graph.vp.f.a = np.ones(self.graph.num_vertices())
+        self.view = GraphView(self.graph,self.graph.vp.f)
 
     def get_actions(self):
         actions = []
-        alreadys = set()
-        for node in self.graph.vertices():
-            if self.graph.vp.o[node]!=0:
+        for node in self.view.vertices():
+            if self.view.vp.o[node]!=0:
                 continue
             left_to_own = 0
             go_there = False
@@ -82,14 +90,12 @@ class Graph_game():
                 neigh_indices.add(int(target))
                 count = target.out_degree()
                 if count==1:
-                    if self.owner_map[self.graph.vp.o[target]] == self.onturn:
+                    if self.owner_map[self.view.vp.o[target]] == self.onturn:
                         return None
                     go_there = True
                 left_to_own += count
-            if self.graph.vp.h[node] not in alreadys:
-                alreadys.add(self.graph.vp.h[node])
-                deg = node.out_degree()
-                actions.append((-10000*int(go_there)-deg+left_to_own/deg,self.graph.vp.h[node],neigh_indices))
+            deg = node.out_degree()
+            actions.append((-10000*int(go_there)-deg+left_to_own/deg,int(node),neigh_indices))
         actions.sort()
         # Remove superseeded actions
         for i in range(len(actions)-1,-1,-1):
@@ -99,41 +105,25 @@ class Graph_game():
                     break
         return [x[1] for x in actions]
     
-    def make_move_vertex(self,square_node):
+    def make_move(self,square_node):
+        if type(square_node) == int:
+            square_node = self.view.vertex(square_node)
         del_nodes = [square_node]
         lost_neighbors = defaultdict(int)
         for wp_node in square_node.all_neighbors():
-            owner = self.owner_map[self.graph.vp.o[wp_node]]
+            owner = self.owner_map[self.view.vp.o[wp_node]]
             if owner == "f":
-                self.graph.vp.o[wp_node] = self.owner_rev[self.onturn]
+                self.view.vp.o[wp_node] = self.owner_rev[self.onturn]
             elif owner != self.onturn:
                 for sq_node in wp_node.all_neighbors():
-                    i = self.graph.vertex_index[sq_node]
+                    i = self.view.vertex_index[sq_node]
                     if sq_node.out_degree() - lost_neighbors[i] == 1:
                         del_nodes.append(sq_node)
                     lost_neighbors[i]+=1
                 del_nodes.append(wp_node)
-        del_inds = set(int(x) for x in del_nodes)
-        self.graph.remove_vertex(del_nodes,fast=True)
-        self.graph.gp["b"] = not self.graph.gp["b"]
-        return del_inds
-
-    def track_vertices(self,del_inds):
-        ind_list = list(range(self.graph.num_vertices()))
-        for ind in sorted(del_inds):
-            if ind==len(ind_list):
-                ind_list.append(None)
-            else:
-                ind_list.append(ind_list[ind])
-                ind_list[ind] = None
-        return ind_list
-    
-    def track_forward(self,del_inds,ind_list):
-        for ind in reversed(sorted(del_inds)):
-            if ind != len(ind_list)-1:
-                ind_list[ind] = ind_list.pop()
-            else:
-                ind_list.pop()
+        for del_node in del_nodes:
+            self.view.vp.f[del_node] = False
+        self.view.gp["b"] = not self.view.gp["b"]
 
     def negate_onturn(self,onturn):
         return "b" if onturn=="w" else ("w" if onturn=="b" else onturn)
@@ -156,9 +146,9 @@ class Graph_game():
         done = False
         if last_gain is None:
             self.known_gain_sets = []
-            for vert in self.graph.vertices():
+            for vert in self.view.vertices():
                 deg = vert.out_degree()
-                owner = self.owner_map[self.graph.vp.o[vert]]
+                owner = self.owner_map[self.view.vp.o[vert]]
                 if owner != None:
                     if owner == self.onturn or owner=="f":
                         if deg == 1:
@@ -196,12 +186,12 @@ class Graph_game():
         else:
             self.known_gain_sets.append(gain)
             rest_squares = set()
-            for wp_ind in self.graph.get_all_neighbors(last_cost):
-                vert = self.graph.vertex(wp_ind)
-                if self.owner_map[self.graph.vp.o[vert]] == self.onturn:
+            for wp_ind in self.view.get_all_neighbors(last_cost):
+                vert = self.view.vertex(wp_ind)
+                if self.owner_map[self.view.vp.o[vert]] == self.onturn:
                     continue
                 frees = set()
-                for sq_ind in self.graph.get_all_neighbors(wp_ind):
+                for sq_ind in self.view.get_all_neighbors(wp_ind):
                     if sq_ind in gain:
                         break
                     if sq_ind not in cost:
@@ -218,12 +208,12 @@ class Graph_game():
                     elif len(frees)==2:
                         for f in frees:
                             legit_defenses.add(f)
-            for wp_ind in self.graph.get_all_neighbors(last_gain):
-                vert = self.graph.vertex(wp_ind)
-                if self.owner_map[self.graph.vp.o[vert]] == self.negate_onturn(self.onturn):
+            for wp_ind in self.view.get_all_neighbors(last_gain):
+                vert = self.view.vertex(wp_ind)
+                if self.owner_map[self.view.vp.o[vert]] == self.negate_onturn(self.onturn):
                     continue
                 frees = set()
-                for sq_ind in self.graph.get_all_neighbors(wp_ind):
+                for sq_ind in self.view.get_all_neighbors(wp_ind):
                     if sq_ind in cost:
                         break
                     if sq_ind not in gain:
@@ -286,74 +276,72 @@ class Graph_game():
         else:
             return set(), False, []
 
-    def make_move(self,move,hashme=True):
-        square_node = list(find_vertex(self.graph,self.graph.vp.h,move))[0]
-        self.make_move_vertex(square_node)
-        if hashme:
-            self.hashme()
-
-    def forced_move_search(self):
-        vert_inds = dict()
-        double_threat = set()
+    def win_threat_search(self,one_is_enough=False):
         force_me_to = None
+        vert_inds = dict()
+        double_threat = dict()
+        winmoves = set()
         loss = False
-        for vert in self.graph.vertices():
+        for vert in self.view.vertices():
             deg = vert.out_degree()
-            owner = self.owner_map[self.graph.vp.o[vert]]
+            owner = self.owner_map[self.view.vp.o[vert]]
             if owner != None:
                 if owner == self.onturn or owner=="f":
                     if deg == 1:
-                        return True
+                        sq, = vert.all_neighbors()
+                        winmoves.add(int(sq))
+                        if one_is_enough:
+                            return winmoves
                     elif deg == 2:
                         nod1,nod2 = vert.all_neighbors()
                         ind1,ind2 = int(nod1),int(nod2)
                         if ind1 in vert_inds:
-                            double_threat.add(ind1)
+                            double_threat[ind1]=(ind2,vert_inds[ind1])
                         if ind2 in vert_inds:
-                            double_threat.add(ind2)
+                            double_threat[ind2] = (ind1,vert_inds[ind2])
                         vert_inds[ind1] = ind2
                         vert_inds[ind2] = ind1
                 else:
                     if deg == 1:
                         sq, = vert.all_neighbors()
-                        ind = self.graph.vertex_index[sq]
+                        ind = int(sq)
                         if force_me_to is None:
                             force_me_to = ind
                         else:
                             if ind != force_me_to:
                                 loss = True
         if loss:
-            return False
+            return winmoves
         if force_me_to is not None:
             if force_me_to in vert_inds:
                 vert_inds = {force_me_to:vert_inds[force_me_to]}
             else:
-                return None
-        if len(set(vert_inds).intersection(double_threat))>0:
-            return True
-        if len(vert_inds) > 1:
-            orig_graph = Graph(self.graph)
-        for i,ind in enumerate(vert_inds.keys()):
-            if i!=0:
-                if i==len(vert_inds)-1:
-                    self.graph = orig_graph
-                else:
-                    self.graph = Graph(orig_graph)
-            vert = self.graph.vertex(ind)
-            del_inds = self.make_move_vertex(vert)
-            reply_ind = self.track_vertices(del_inds)[vert_inds[ind]]
-            reply_vert = self.graph.vertex(reply_ind)
-            self.make_move_vertex(reply_vert)
-            if self.forced_move_search():
-                return True
-        return None
+                return winmoves
+        for n in set(vert_inds).intersection(set(double_threat)):
+            winmoves.add(n)
+            if one_is_enough:
+                return winmoves
+        if len(winmoves)>1 and one_is_enough:
+            return winmoves
+        storage = self.extract_storage()
+        for ind in vert_inds:
+            if ind in winmoves:
+                continue
+            self.make_move(ind)
+            self.make_move(vert_inds[ind])
+            if len(self.win_threat_search(one_is_enough=True)) > 0:
+                winmoves.add(ind)
+                if one_is_enough:
+                    return winmoves
+            self.load_storage(storage)
+        return winmoves
 
     def draw_me(self,index=0):
-        if self.graph.num_vertices()==0:
+        if self.view.num_vertices()==0:
             print("WARNING: Trying to draw graph without vertices")
             return
-        fill_color = self.graph.new_vertex_property("vector<float>")
-        for vertex in self.graph.vertices():
-            x = self.graph.vp.o[vertex]
+        fill_color = self.view.new_vertex_property("vector<float>")
+        for vertex in self.view.vertices():
+            x = self.view.vp.o[vertex]
             fill_color[vertex] = (0,0,1,1) if x==0 else ((0,1,1,1) if x==1 else ((0,0,0,1) if x==2 else (255,0,0,1)))
-        graph_draw(self.graph, vprops={"fill_color":fill_color}, vertex_text=self.graph.vertex_index, output=f"game_state_{index}.pdf")
+        graph_draw(self.view, vprops={"fill_color":fill_color}, vertex_text=self.view.vertex_index, output=f"game_state_{index}.pdf")

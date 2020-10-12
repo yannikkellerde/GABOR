@@ -4,11 +4,13 @@ from graph_tool.all import *
 from time import perf_counter
 import numpy as np
 
-def wl_hash(G:Graph, node_property:VertexPropertyMap, iterations=3, digest_size=7):
+def wl_hash(G:GraphView, node_property:VertexPropertyMap, iterations=3, digest_size=7):
+    ind_map = [int(x) for x in G.vertices()]
+    rev_ind = {key:value for value,key in enumerate(ind_map)}
     def nei_agg(G, n, node_labels):
         x = [node_labels[n]]
-        for nei in G.get_all_neighbors(n):
-            x.append(node_labels[nei])
+        for nei in G.get_all_neighbors(ind_map[n]):
+            x.append(node_labels[rev_ind[nei]])
         return ''.join(sorted(x))
 
     def wl_step(G, labels):
@@ -21,7 +23,7 @@ def wl_hash(G:Graph, node_property:VertexPropertyMap, iterations=3, digest_size=
         return new_labels
 
     items = []
-    node_labels = [str(x) for x in node_property.get_array()]
+    node_labels = [str(x) for x in node_property.get_array()[ind_map]]
 
     for k in range(iterations):
         node_labels = wl_step(G, node_labels)
@@ -31,8 +33,6 @@ def wl_hash(G:Graph, node_property:VertexPropertyMap, iterations=3, digest_size=
             h = blake2b(digest_size=digest_size)
             h.update(d.encode('ascii'))
             hexed = h.hexdigest()
-            if k==iterations-1:
-                G.vp.h[G.vertex(i)] = int(hexed,16)
             c.update([hexed])
         # sort the counter, extend total counts
         items.extend(sorted(c.items(), key=lambda x: x[0]))

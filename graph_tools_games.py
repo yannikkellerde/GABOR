@@ -9,7 +9,7 @@ class Qango6x6(Graph_game):
     def __init__(self):
         super().__init__()
         self.board = Qango6x6_board()
-        self.board.graph_representation = self
+        self.board.game = self
         self.graph_from_board()
 
 class Qango6x6_board(Board_game):
@@ -30,7 +30,7 @@ class Tic_tac_toe(Graph_game):
     def __init__(self):
         super().__init__()
         self.board = Tic_tac_toe_board()
-        self.board.graph_representation = self
+        self.board.game = self
         self.graph_from_board()
 
 class Tic_tac_toe_board(Board_game):

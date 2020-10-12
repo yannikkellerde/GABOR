@@ -84,8 +84,52 @@ def test_threat_search():
     for line in movelines:
         print([d if type(d)==str else (game.board.node_map[d]%6,game.board.node_map[d]//6) for d in line[1:]])
 
+def test_win_thread_search():
+    game = Qango6x6()
+    game.board.position = list( "ffffwf"
+                                "wbwfbf"
+                                "ffffff"
+                                "ffffwf"
+                                "wbwfbf"
+                                "ffffwf")
+
+    """game.board.position = list( "ffffff"
+                                "ffffff"
+                                "fwffff"
+                                "ffbwff"
+                                "ffwbff"
+                                "ffffbf")"""
+    game.board.onturn = "b"
+    game.graph_from_board()
+    s = time.perf_counter()
+    winmoves = game.win_threat_search(one_is_enough=False)
+    print(time.perf_counter()-s)
+    print([(game.board.node_map[x]%6,game.board.node_map[x]//6) for x in winmoves])
+
+def test_pos_from_graph():
+    game = Qango6x6()
+    game.board.position = list( "ffffff"
+                                "ffffff"
+                                "ffffff"
+                                "ffffff"
+                                "fffbff"
+                                "ffffff")
+    game.board.onturn = "w"
+    game.graph_from_board()
+    game.board.inv_maps()
+    reco_pos = game.board.pos_from_graph()
+    game.board.draw_me(reco_pos)
+    game.make_move(game.board.node_map_rev[3*6+3])
+    reco_pos = game.board.pos_from_graph()
+    game.board.draw_me(reco_pos)
+    #game.make_move(list(game.board.node_map.keys())[9])
+    #reco_pos = game.board.pos_from_graph()
+    #game.board.draw_me(reco_pos)
+
 if __name__ == "__main__":
     #test_moving()
     #test_board_representation()
     #test_forced_move_search()
-    test_threat_search()
+    #test_threat_search()
+    #test_pos_from_graph()
+    test_win_thread_search()
