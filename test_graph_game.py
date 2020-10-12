@@ -3,6 +3,7 @@ from graph_tools_games import Tic_tac_toe,Qango6x6
 from solve_graph_tools import PN_search
 import matplotlib.pyplot as plt
 import time
+from functools import reduce
 
 def test_moving():
     game = Tic_tac_toe()
@@ -32,12 +33,12 @@ def test_board_representation():
 
 def test_forced_move_search():
     game = Qango6x6()
-    game.board.position = list( "ffffff"
-                                "fbwwbf"
+    game.board.position = list( "ffffwf"
+                                "wbwfbf"
                                 "ffffff"
-                                "ffwfff"
-                                "fffbff"
-                                "ffffff")
+                                "ffffwf"
+                                "wbwfbf"
+                                "ffffwf")
     game.board.onturn = "b"
     game.graph_from_board()
     game.hashme()
@@ -46,7 +47,31 @@ def test_forced_move_search():
     print(game.forced_move_search())
     print(time.perf_counter()-s)
 
+def test_threat_search():
+    game = Qango6x6()
+    game.board.position = list( "ffffwf"
+                                "wbwfbf"
+                                "ffffff"
+                                "ffffwf"
+                                "wbwfbf"
+                                "ffffwf")
+    game.board.onturn = "b"
+    game.graph_from_board()
+    game.draw_me(-1)
+    s = time.perf_counter()
+    defenses,win,movelines = game.threat_search()
+    print(time.perf_counter()-s)
+    print(win,len(defenses),defenses)
+    board_view = []
+    for d in defenses:
+        val = game.board.node_map[d]
+        board_view.append((val%6,val//6))
+    print(board_view)
+    for line in movelines:
+        print([d if type(d)==str else (game.board.node_map[d]%6,game.board.node_map[d]//6) for d in line[1:]])
+
 if __name__ == "__main__":
     #test_moving()
     #test_board_representation()
-    test_forced_move_search()
+    #test_forced_move_search()
+    test_threat_search()

@@ -18,7 +18,7 @@ class Board_game():
     def create_node_hash_map(self):
         for vertex in self.graph_representation.graph.vertices():
             if self.graph_representation.graph.vp.o[vertex] == 0:
-                self.node_hash_map[self.graph_representation.graph.vp.h[vertex]] = self.node_map[vertex]
+                self.node_hash_map[self.graph_representation.graph.vp.h[vertex]] = self.node_map[int(vertex)]
     
     def load_sets(self,provenfile,disprovenfile):
         with open(provenfile,"rb") as f:
