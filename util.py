@@ -1,5 +1,49 @@
 import math
 import psutil
+import networkx as nx
+from networkx.drawing.nx_agraph import write_dot, graphviz_layout
+import matplotlib.pyplot as plt
+
+def draw_pn_tree(root,depth=3):
+    global count
+    def add_nodes_recur(cur,depth):
+        global count
+        g.add_node(count,label=f"{cur[PN]}|{cur[DN]}")
+        node_sizes.append(900 if depth>0 else 150)
+        font_sizes[count] = 7 if depth>0 else 4
+        my_c = count
+        count += 1
+        if depth<=0:
+            return my_c
+        for child in cur[CHILDREN]:
+            c_num = add_nodes_recur(child,depth-1)
+            g.add_edge(my_c,c_num)
+        return my_c
+    node_sizes = []
+    font_sizes = {}
+    plt.cla()
+    # Node storage for memory efficency in lists
+    PN = 0 # int
+    DN = 1 # int
+    HASH = 2 # int
+    PARENTS = 3 # List of Nodes(which are lists)
+    CHILDREN = 4 # List of tuples containing move made and Node (which is a lists)
+    PROOFNODE = 5 # Bool, are we in a proof node or disproof node
+    STORAGE = 6 # A tuple containing 1. an owner map, 2. a filter map, 3. onturn bool
+    count = 0
+    g = nx.DiGraph()
+    add_nodes_recur(root,depth)
+    plt.figure(figsize=(20,10)) 
+    write_dot(g,'test.dot')
+    pos = graphviz_layout(g, prog='dot')
+    nx.draw(g, pos, with_labels=False, arrows=True, node_color="lightblue", node_size=node_sizes)
+    node_labels = nx.get_node_attributes(g,'label')
+    #nx.draw_networkx_labels(g, pos, labels = node_labels, font_size=font_sizes, font_color="white")
+    for node, (x, y) in pos.items():
+        plt.text(x, y, node_labels[node], fontsize=font_sizes[node], ha='center', va='center', color="black")
+    plt.savefig('pn_tree.svg')
+    plt.close()
+
 
 def findsquares(squares):
     winsquarenums = set()
@@ -30,77 +74,6 @@ def findfivers(squares):
             if (s % perrow) >= 4:
                 winsquarenums.add(frozenset({s,s+5,s+10,s+15,s+20}))
     return winsquarenums
-
-def buildupnodestruct(Node, moves, root, game, ttable):
-    cur = root
-    for move in moves:
-        game.set_state(cur.position, cur.myturn)
-        game.make_move(move)
-        child = Node(game.onturn, game.position, cur, 1, 1)
-        ttable[game.hashpos()] = child
-        cur.children = [child]
-        cur = child
-
-def getwinhash(winpatterns, squares):
-    winhash = {}
-    pat_to_square = {w:set() for w in winpatterns}
-    for s in range(squares):
-        binsquare = 1<<s
-        winhash[binsquare] = set()
-        for w in winpatterns:
-            if binsquare&w:
-                pat_to_square[w].add(binsquare)
-                winhash[binsquare].add(w)
-    return winhash,pat_to_square
-
-def board_to_pos(board):
-    new_board = ""
-    for line in board.splitlines():
-        new_board += line.strip().replace("#","").replace("\t","")
-    pos = [0,0]
-    for i,c in enumerate(new_board):
-        if c=="X":
-            pos[1]|=(1<<i)
-        elif c=="O":
-            pos[0]|=(1<<i)
-    return pos
-
-def draw_board(pos, squares):
-    rowsquares = math.sqrt(squares)
-    outstr=((int(rowsquares)+2)*"#")+"\n#"
-    for i in range(squares):
-        if pos[0]&(2**i):
-            outstr+="O"
-        elif pos[1]&(2**i):
-            outstr+="X"
-        else:
-            outstr+=" "
-        if i%rowsquares==rowsquares-1:
-            outstr+="#\n#"
-    outstr+=(int(rowsquares)+1)*"#"
-    print(outstr)
-
-def check_position_consistent(pos,onturn):
-    val1 = bin(pos[0]).count("1")+(not onturn) == bin(pos[1]).count("1")
-    val2 = bin(pos[0]).count("1")+bin(pos[1]).count("1") == bin(pos[0]|pos[1]).count("1")
-    return val1 and val2
-
-def show_all_wins(game):
-    for p in game.winpatterns:
-        game.set_state([p,0],True)
-        draw_board(game.position, 36)
-        print("-----------------------------")
-
-def test_game(game):
-    while 1:
-        draw_board(game.position, game.squares)
-        print("choose one of the following actions")
-        print(",".join(map(lambda x:str(int(math.log2(x))), game.get_actions())))
-        #print(",".join(map(lambda x:str(int(math.log2(x))), game.get_actions_simple())))
-        a = input()
-        win = game.make_move(2**int(a))
-        if win:
-            print("You win")
 
 def resources_avaliable():
     memory = psutil.virtual_memory()

@@ -1,11 +1,10 @@
 import math
-import util
+from util import resources_avaliable,draw_pn_tree
 import gc
 import pickle
 import os,sys
 from graph_tools_games import Tic_tac_toe,Qango6x6
 from graph_tools_game import Graph_game
-from util import draw_board,check_position_consistent
 from data_magic import save_sets
 from graph_tool.all import *
 import numpy as np
@@ -30,7 +29,6 @@ class PN_search():
         self.node_count = 0
         self.alive_graphs = 0
         self.proofadds = [0,0]
-        self.real_proofadds = [0,0]
         self.drawproves = drawproves
         self.prooffile = prooffile
         self.disprooffile = disprooffile
@@ -78,11 +76,9 @@ class PN_search():
         if n[PN] == 0:
             self.provenset.add(n[HASH])
             self.proofadds[0] += 1
-            self.real_proofadds[0] += 1
         elif n[DN] == 0:
             self.disprovenset.add(n[HASH])
             self.proofadds[1] += 1
-            self.real_proofadds[1] += 1
         if len(n)>STORAGE:
             self.alive_graphs-=1
             del n[STORAGE]
@@ -104,6 +100,7 @@ class PN_search():
             self.delete_node(n, n[PARENTS], n[CHILDREN])
 
     def select_most_proving(self, n):
+        depth = 0
         while n[CHILDREN]:
             val = math.inf
             best = None
@@ -118,7 +115,8 @@ class PN_search():
                         best = child
                         val = child[DN]
             n = best
-        return n
+            depth += 1
+        return n,depth
 
     def evaluate(self,n,hashval):
         if hashval in self.provenset:
@@ -129,7 +127,7 @@ class PN_search():
             return self.drawproves
         return None
 
-    def expand(self, n):
+    def expand(self, n, threat_search=True, blocked_moves=None):
         self.game.load_storage(n[STORAGE])
         moves = self.game.get_actions()
         if moves is None:
@@ -150,11 +148,14 @@ class PN_search():
                 n[DN] = 0
             del n[STORAGE]
             return
-        self.game.view.gp["b"] = not self.game.view.gp["b"]
-        defense_vertices,has_threat,_ = self.game.threat_search()
-        self.game.view.gp["b"] = not self.game.view.gp["b"]
-        if has_threat:
-            moves = [move for move in moves if move in defense_vertices]
+        if blocked_moves is not None:
+            moves = [move for move in moves if move not in blocked_moves]
+        if threat_search:
+            self.game.view.gp["b"] = not self.game.view.gp["b"]
+            defense_vertices,has_threat,_ = self.game.threat_search()
+            self.game.view.gp["b"] = not self.game.view.gp["b"]
+            if has_threat:
+                moves = [move for move in moves if move in defense_vertices]
         knownhashvals = set()
         for move in moves:
             if move != moves[0]:
@@ -177,14 +178,10 @@ class PN_search():
                 self.ttable[hashval]=child
             else:
                 if res:
-                    self.provenset.add(res)
-                    self.proofadds[0]+= 1
                     if not n[PROOFNODE]:
                         continue
                     child = [0,math.inf]
                 else:
-                    self.disprovenset.add(res)
-                    self.proofadds[1]+= 1
                     if n[PROOFNODE]:
                         continue
                     child = [math.inf,0]
@@ -195,10 +192,14 @@ class PN_search():
         del n[STORAGE]
         self.alive_graphs -= 1
 
-    def pn_search(self,onturn_proves=True,verbose=True,save=True):
+    def pn_search(self,onturn_proves=True,verbose=True,save=True,burgregel=2):
         self.game.hashme()
         hashval = self.game.hash
-        self.root = [1,1,hashval,[],[],onturn_proves,self.extract_storage()]
+        self.root = [1,1,hashval,[],[],onturn_proves,self.game.extract_storage()]
+        if burgregel in [1,2]:
+            blocked = self.game.board.get_burgregel_blocked()
+        elif burgregel == 3:
+            blocked = self.game.board.get_profiregel_blocked()
         self.alive_graphs+=1
         self.node_count += 1
         self.ttable[hashval] = self.root
@@ -207,7 +208,7 @@ class PN_search():
         starts = {}
         while self.root[PN]!=0 and self.root[DN]!=0:
             if verbose:
-                if c % 10 == 1:
+                if c % 100 == 1:
                     print("iteration:",c)
                     print("node_count:",self.node_count)
                     print("graphs:",self.alive_graphs)
@@ -224,20 +225,33 @@ class PN_search():
                     if c % 1000000 == 0:
                         gc.collect()
                     print("Proofadds: {}".format(self.proofadds))
-                    print("Real proofadds: {}".format(self.real_proofadds))
-                    if not util.resources_avaliable():
+                    if not resources_avaliable():
                         return False
                     times = {"select_most_proving":[],"expand":[],"update_anchestors":[],"whole_it":[]}
             if save:
-                if c%100==0:
+                if c%10000==0:
                     save_sets((self.provenset,self.prooffile),(self.disprovenset,self.disprooffile))
+                    draw_pn_tree(self.root,2)
             starts["whole_it"] = time.perf_counter()
             c+=1
             starts["select_most_proving"] = time.perf_counter()
-            most_proving = self.select_most_proving(self.root)
+            most_proving,depth = self.select_most_proving(self.root)
             times["select_most_proving"].append(time.perf_counter()-starts["select_most_proving"])
             starts["expand"] = time.perf_counter()
-            self.expand(most_proving)
+            if burgregel==0:
+                self.expand(most_proving)
+            elif burgregel==1 or burgregel==3:
+                if depth==0:
+                    self.expand(most_proving,blocked_moves=blocked)
+                else:
+                    self.expand(most_proving)
+            elif burgregel==2:
+                if depth==0 or depth==2:
+                    self.expand(most_proving,blocked_moves=blocked)
+                elif depth==1:
+                    self.expand(most_proving,threat_search=False)
+                else:
+                    self.expand(most_proving)
             times["expand"].append(time.perf_counter()-starts["expand"])
             starts["update_anchestors"] = time.perf_counter()
             self.update_anchestors(most_proving)
@@ -256,13 +270,6 @@ class PN_search():
 
 if __name__ == "__main__":
     g = Qango6x6()
-    g.board.position = list("ffffff"
-                            "ffffff"
-                            "ffffff"
-                            "ffffff"
-                            "fffbff"
-                            "ffffff")
-    g.board.onturn = "w"
-    g.graph_from_board()
-    pn_s = PN_search(g,prooffile="proofsets/burgregelp.pkl",disprooffile="proofsets/burgregeld.pkl")
-    pn_s.pn_search(onturn_proves=False)
+    burgregel = 3
+    pn_s = PN_search(g,prooffile=f"proofsets/burgregel{burgregel}p.pkl",disprooffile=f"proofsets/burgregel{burgregel}d.pkl")
+    pn_s.pn_search(onturn_proves=True,burgregel=burgregel)

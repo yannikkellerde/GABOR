@@ -1,5 +1,4 @@
 .vscode/
-proofsets/
 venv/
 __pycache__/
 solver.log

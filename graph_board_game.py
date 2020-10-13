@@ -36,22 +36,35 @@ class Board_game():
                     pos[sq] = owner
         return pos
 
+    def get_burgregel_blocked(self):
+        self.inv_maps()
+        blocked_sq = [7,10,14,15,20,21,25,28]
+        blocked_moves = set(self.node_map_rev[x] for x in blocked_sq)
+        return blocked_moves
+
+    def get_profiregel_blocked(self):
+        self.inv_maps()
+        blocked_sq = [7,8,9,10,13,14,15,16,19,20,21,22,25,26,27,28]
+        blocked_moves = set(self.node_map_rev[x] for x in blocked_sq)
+        return blocked_moves
+
     def load_sets(self,provenfile,disprovenfile):
         with open(provenfile,"rb") as f:
             self.provenset = pickle.load(f)
         with open(disprovenfile,"rb") as f:
             self.disprovenset = pickle.load(f)
 
-    def check_move_val(self,moves):
+    def check_move_val(self,moves,do_threat_search=True):
         winmoves = self.game.win_threat_search(one_is_enough=False)
-        self.game.view.gp["b"] = not self.game.view.gp["b"]
-        defense_vertices,has_threat,_ = self.game.threat_search()
-        self.game.view.gp["b"] = not self.game.view.gp["b"]
+        if do_threat_search:
+            self.game.view.gp["b"] = not self.game.view.gp["b"]
+            defense_vertices,has_threat,_ = self.game.threat_search()
+            self.game.view.gp["b"] = not self.game.view.gp["b"]
         results = []
         storage = self.game.extract_storage()
         for move in moves:
             self.game.load_storage(storage)
-            if has_threat and move not in defense_vertices:
+            if do_threat_search and has_threat and move not in defense_vertices:
                 if self.game.onturn=="b":
                     val = 2
                 else:
