@@ -50,7 +50,7 @@ def findsquares(squares):
     perrow = int(math.sqrt(squares))
     for s in range(squares-perrow-1):
         if s % perrow != perrow-1:
-            winsquarenums.add(frozenset({s,s+1,s+6,s+7}))
+            winsquarenums.add(frozenset({s,s+1,s+perrow,s+perrow+1}))
     return winsquarenums
 
 def remove_useless_wsn(winsquarenums):
@@ -68,11 +68,11 @@ def findfivers(squares):
         if perrow - (s % perrow) >= 5:
             winsquarenums.add(frozenset({s,s+1,s+2,s+3,s+4}))
             if perrow - (s // perrow) >= 5:
-                winsquarenums.add(frozenset({s,s+7,s+14,s+21,s+28}))
+                winsquarenums.add(frozenset({s,s+perrow+1,s+2*(perrow+1),s+3*(perrow+1),s+4*(perrow+1)}))
         if perrow - (s // perrow) >= 5:
-            winsquarenums.add(frozenset({s,s+6,s+12,s+18,s+24}))
+            winsquarenums.add(frozenset({s,s+perrow,s+2*perrow,s+3*perrow,s+4*perrow}))
             if (s % perrow) >= 4:
-                winsquarenums.add(frozenset({s,s+5,s+10,s+15,s+20}))
+                winsquarenums.add(frozenset({s,s+perrow-1,s+2*(perrow-1),s+3*(perrow-1),s+4*(perrow-1)}))
     return winsquarenums
 
 def resources_avaliable():

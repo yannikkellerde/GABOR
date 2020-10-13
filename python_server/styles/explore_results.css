@@ -225,3 +225,6 @@ td.occupied{
 .green{
     background: radial-gradient(circle, rgba(2, 252, 15, 0.884) 0%, rgb(4, 53, 2) 100%);
 }
+.grey{
+    background: radial-gradient(circle, rgb(149, 149, 149) 0%, rgb(24, 24, 24) 100%);
+}

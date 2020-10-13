@@ -3,6 +3,10 @@ venv/
 __pycache__/
 solver.log
 *.txt
+*.pdf
+*.dot
+*.odp#
+*.svg
 json/
 gctest.py
 *.pyc

@@ -1,7 +1,7 @@
 import sys
 sys.path.append("..")
 sys.path.append(".")
-from graph_tools_games import Tic_tac_toe, Qango6x6
+from graph_tools_games import Tic_tac_toe, Qango6x6, Qango7x7
 import math
 import pickle
 import json
@@ -65,11 +65,11 @@ class Post_handler(SimpleHTTPRequestHandler):
             moves = []
         board_moves = [game.board.node_map[x] for x in moves]
         game.draw_me()
-        if burgregel==2 and len(list(filter(lambda x:x!="f",real_pos)))==1:
-            print("heyo")
-            evals = game.board.check_move_val(moves,do_threat_search=False)
-        else:
-            evals = game.board.check_move_val(moves)
+        #if burgregel==2 and len(list(filter(lambda x:x!="f",real_pos)))==1:
+        #    print("heyo")
+        #    evals = game.board.check_move_val(moves,do_threat_search=False)
+        #else:
+        evals = game.board.check_move_val(moves)
         moves_with_eval = list(zip(board_moves, evals))
         # send the message back
         self._set_headers()
@@ -96,12 +96,16 @@ def start_server():
 
 if __name__ == "__main__":
     my_folder = sys.argv[1]
-    if "qango" in my_folder:
+    if "qango6x6"==my_folder:
         game = Qango6x6()
-    else:
+    elif "qango7x7"==my_folder:
+        game = Qango7x7()
+    elif "tic_tac_toe"==my_folder:
         game = Tic_tac_toe()
+    else:
+        raise ValueError(f"Game not found {my_folder}")
     burgregel = int(sys.argv[2])
-    game.board.load_sets(f"../proofsets/burgregel{burgregel}p.pkl",f"../proofsets/burgregel{burgregel}d.pkl")
+    game.board.load_sets(f"../proofsets/{my_folder}_{burgregel}p.pkl",f"../proofsets/{my_folder}_{burgregel}d.pkl")
     endgame_depth = 0
     open_browser()
     start_server()

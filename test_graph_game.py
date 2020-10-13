@@ -1,5 +1,5 @@
 import networkx as nx
-from graph_tools_games import Tic_tac_toe,Qango6x6
+from graph_tools_games import Tic_tac_toe,Qango6x6,Qango7x7
 from solve_graph_tools import PN_search
 import matplotlib.pyplot as plt
 import time
@@ -126,10 +126,24 @@ def test_pos_from_graph():
     #reco_pos = game.board.pos_from_graph()
     #game.board.draw_me(reco_pos)
 
+def display_wsn():
+    game = Qango7x7()
+    count = 0
+    for wsn in game.board.winsquarenums:
+        if len(wsn)!=4:
+            continue
+        count+=1
+        game.board.position = ["f"]*game.board.squares
+        for ws in wsn:
+            game.board.position[ws] = "W"
+        game.board.draw_me()
+    print(count)
+
 if __name__ == "__main__":
     #test_moving()
     #test_board_representation()
     #test_forced_move_search()
     #test_threat_search()
     #test_pos_from_graph()
-    test_win_thread_search()
+    #test_win_thread_search()
+    display_wsn()

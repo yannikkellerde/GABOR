@@ -3,7 +3,7 @@ from util import resources_avaliable,draw_pn_tree
 import gc
 import pickle
 import os,sys
-from graph_tools_games import Tic_tac_toe,Qango6x6
+from graph_tools_games import Tic_tac_toe,Qango6x6,Qango7x7
 from graph_tools_game import Graph_game
 from data_magic import save_sets
 from graph_tool.all import *
@@ -196,10 +196,7 @@ class PN_search():
         self.game.hashme()
         hashval = self.game.hash
         self.root = [1,1,hashval,[],[],onturn_proves,self.game.extract_storage()]
-        if burgregel in [1,2]:
-            blocked = self.game.board.get_burgregel_blocked()
-        elif burgregel == 3:
-            blocked = self.game.board.get_profiregel_blocked()
+        blocked,block_depths,threadblock = self.game.board.get_burgregel_blocked(burgregel)
         self.alive_graphs+=1
         self.node_count += 1
         self.ttable[hashval] = self.root
@@ -238,20 +235,10 @@ class PN_search():
             most_proving,depth = self.select_most_proving(self.root)
             times["select_most_proving"].append(time.perf_counter()-starts["select_most_proving"])
             starts["expand"] = time.perf_counter()
-            if burgregel==0:
-                self.expand(most_proving)
-            elif burgregel==1 or burgregel==3:
-                if depth==0:
-                    self.expand(most_proving,blocked_moves=blocked)
-                else:
-                    self.expand(most_proving)
-            elif burgregel==2:
-                if depth==0 or depth==2:
-                    self.expand(most_proving,blocked_moves=blocked)
-                elif depth==1:
-                    self.expand(most_proving,threat_search=False)
-                else:
-                    self.expand(most_proving)
+            if depth in block_depths:
+                self.expand(most_proving,threat_search=depth not in threadblock,blocked_moves=blocked)
+            else:
+                self.expand(most_proving,threat_search=depth not in threadblock)
             times["expand"].append(time.perf_counter()-starts["expand"])
             starts["update_anchestors"] = time.perf_counter()
             self.update_anchestors(most_proving)
@@ -269,7 +256,15 @@ class PN_search():
 
 
 if __name__ == "__main__":
-    g = Qango6x6()
-    burgregel = 3
-    pn_s = PN_search(g,prooffile=f"proofsets/burgregel{burgregel}p.pkl",disprooffile=f"proofsets/burgregel{burgregel}d.pkl")
+    game = sys.argv[1]
+    burgregel = int(sys.argv[2])
+    if game=="qango6x6":
+        g = Qango6x6()
+    elif game=="qango7x7":
+        g = Qango7x7()
+    elif game=="tic_tac_toe":
+        g = Tic_tac_toe()
+    else:
+        raise ValueError(f"Game not found {game}")
+    pn_s = PN_search(g,prooffile=f"proofsets/{game}_{burgregel}p.pkl",disprooffile=f"proofsets/{game}_{burgregel}d.pkl")
     pn_s.pn_search(onturn_proves=True,burgregel=burgregel)

@@ -36,18 +36,6 @@ class Board_game():
                     pos[sq] = owner
         return pos
 
-    def get_burgregel_blocked(self):
-        self.inv_maps()
-        blocked_sq = [7,10,14,15,20,21,25,28]
-        blocked_moves = set(self.node_map_rev[x] for x in blocked_sq)
-        return blocked_moves
-
-    def get_profiregel_blocked(self):
-        self.inv_maps()
-        blocked_sq = [7,8,9,10,13,14,15,16,19,20,21,22,25,26,27,28]
-        blocked_moves = set(self.node_map_rev[x] for x in blocked_sq)
-        return blocked_moves
-
     def load_sets(self,provenfile,disprovenfile):
         with open(provenfile,"rb") as f:
             self.provenset = pickle.load(f)
