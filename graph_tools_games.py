@@ -103,6 +103,77 @@ class Qango7x7_board(Board_game):
         blocked_moves = set(self.node_map_rev[x] for x in blocked_sq)
         return blocked_moves,block_depths,threadblock
 
+class Qango7x7_plus(Graph_game):
+    def __init__(self):
+        super().__init__()
+        self.board = Qango7x7_plus_board()
+        self.board.game = self
+        self.graph_from_board()
+
+class Qango7x7_plus_board(Board_game):
+    def __init__(self):
+        super().__init__()
+        self.squares = 37
+        self.position = ["f" for _ in range(self.squares)]
+        self.winsquarenums = {
+            frozenset({2,8,14}),frozenset({4,12,20}),
+            frozenset({28,36,44}),frozenset({34,40,46}),frozenset({3,9,10}),
+            frozenset({26,27,33}),frozenset({29,30,37}),frozenset({11,18,19}),
+            frozenset({15,21,22}),frozenset({38,39,45}),frozenset({16,17,23}),
+            frozenset({25,31,32})
+        }
+        self.winsquarenums.update(findsquares(49))
+        self.winsquarenums.update(findfivers(49))
+        remove_useless_wsn(self.winsquarenums)
+        self.change_wsn()
+
+    def change_wsn(self):
+        removals = [0,1,7,5,6,13,35,42,43,41,47,48]
+        new_wsn = set()
+        for wsn in self.winsquarenums:
+            new = set()
+            for ws in wsn:
+                if ws in removals:
+                    break
+                for i,r in enumerate(removals):
+                    if r>ws:
+                        break
+                unders = i
+                new.add(ws-unders)
+            else:
+                new_wsn.add(frozenset(new))
+        self.winsquarenums = new_wsn
+
+    def draw_me(self,pos=None):
+        row_starts = [2,1,0,0,0,1,2]
+        row_ends = [5,6,7,7,7,6,5]
+        out = "#"*(7+2)+"\n"
+        count = 0
+        pos = self.position if pos is None else pos
+        for rs,re in zip(row_starts,row_ends):
+            out+=" "*rs+"#"
+            for _ in range(rs,re):
+                out+=pos[count]
+                count+=1
+            out+="#"+" "*re+"\n"
+        out += "#"*(7+2)
+        print(out)
+
+    def get_burgregel_blocked(self,b_count):
+        self.inv_maps()
+        threadblock = set()
+        block_depths = set([0])
+        if b_count==0:
+            blocked_sq = []
+        elif b_count==1:
+            blocked_sq = [4,5,6,9,10,11,12,13,16,17,18,19,20,23,24,25,26,27,30,31,32]
+        elif b_count==2:
+            allowed = [6,13,23,30]
+            blocked_sq = list(filter(lambda x:x not in allowed,range(self.squares)))
+        blocked_moves = set(self.node_map_rev[x] for x in blocked_sq)
+        return blocked_moves,block_depths,threadblock
+
+
 if __name__ == "__main__":
     q = Qango7x7_board()
     print(len(q.winsquarenums))

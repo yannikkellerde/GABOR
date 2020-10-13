@@ -228,3 +228,7 @@ td.occupied{
 .grey{
     background: radial-gradient(circle, rgb(149, 149, 149) 0%, rgb(24, 24, 24) 100%);
 }
+.invis{
+    visibility: hidden;
+    cursor:default;
+}

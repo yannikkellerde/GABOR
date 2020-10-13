@@ -1,0 +1,29 @@
+#board{
+    width: 750px;
+    height: 750px;
+    left: 50px;
+    top: 50px;
+}
+#board tr{
+    height:125px;
+}
+#board td{
+    width:125px;
+}
+.blocked_square{
+    text-align: center;
+    font-size: 82px;
+    color:black;
+}
+.whitestone{
+    background-color: white;
+}
+.blackstone{
+    background-color: black;
+}
+.stone{
+    width:99px;
+    height:99px;
+    border-radius: 50%;
+    margin-left:13px;
+}
