@@ -78,18 +78,18 @@ class Page_handler():
                                     position[sq_num] = "b"
                                 else:
                                     position[sq_num] = "w"
+                assert len(sqs)<2
+                assert onturn is not None
+                if len(sqs)==0:
+                    onturn = "b"
+                else:
+                    left_sq, = sqs
+                    position[left_sq] = last_sq
                 break
             except StaleElementReferenceException:
                 print(traceback.format_exc())
         else:
             return False
-        if len(sqs)==0:
-            onturn = "b"
-        else:
-            left_sq, = sqs
-            position[left_sq] = last_sq
-        assert len(sqs)<2
-        assert onturn is not None
         w_count = position.count("w") + (0.5 if onturn=="w" else 0)
         b_count = position.count("b") + (0.5 if onturn=="b" else 0)
         if w_count>b_count:
@@ -192,7 +192,7 @@ class Page_handler():
         return True
 
     def do_one_evil(self):
-        self.driver = webdriver.Firefox()
+        self.driver = webdriver.Chrome("/usr/bin/chromedriver")
         try:
             self.login()
         except Exception as e:
@@ -210,10 +210,13 @@ class Page_handler():
             time.sleep(1*self.time_multiplier)
             if game_id is None:
                 break
-            try:
-                self.play_move_game(game_id)
-            except Exception as e:
-                print(traceback.format_exc())
+            for _ in range(self.lais):
+                try:
+                    self.play_move_game(game_id)
+                    break
+                except Exception as e:
+                    print(traceback.format_exc())
+            else:
                 self.driver.quit()
                 return False
             time.sleep(1*self.time_multiplier)
@@ -236,6 +239,15 @@ class Page_handler():
                 return False
         self.driver.quit()
 
+    def wait(self,seconds):
+        start = time.time()
+        while 1:
+            cur = time.time()
+            print(str(int(start+seconds-cur)),end="\r",flush=True)
+            time.sleep(1)
+            if start+seconds<cur:
+                break
+
     def be_evil_for_a_while(self):
         while 1:
             try:
@@ -247,7 +259,7 @@ class Page_handler():
                 except Exception as e:
                     print(traceback.format_exc())
             sleeptime = random.randint(60,36000)
-            time.sleep(sleeptime)
+            self.wait(sleeptime)
 
 if __name__ == "__main__":
     ph = Page_handler()
