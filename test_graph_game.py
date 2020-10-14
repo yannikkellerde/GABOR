@@ -3,6 +3,7 @@ from graph_tools_games import Tic_tac_toe,Qango6x6,Qango7x7,Qango7x7_plus
 from solve_graph_tools import PN_search
 import matplotlib.pyplot as plt
 import time
+from ai_api import Ai_api
 from functools import reduce
 
 def test_moving():
@@ -139,6 +140,17 @@ def display_wsn():
         game.board.draw_me()
     print(count)
 
+def test_ai_api():
+    ai = Ai_api({"qango6x6":[0,1,2,3],"qango7x7_plus":[2]})
+    pos = list( "ffffff"
+                "ffffff"
+                "ffffff"
+                "ffffff"
+                "ffffff"
+                "fffbff")
+    onturn = "w"
+    print(ai.get_move("qango6x6",3,onturn,pos))
+
 if __name__ == "__main__":
     #test_moving()
     #test_board_representation()
@@ -146,4 +158,5 @@ if __name__ == "__main__":
     #test_threat_search()
     #test_pos_from_graph()
     #test_win_thread_search()
-    display_wsn()
+    #display_wsn()
+    test_ai_api()

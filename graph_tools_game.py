@@ -78,7 +78,7 @@ class Graph_game():
         self.graph.vp.f.a = np.ones(self.graph.num_vertices())
         self.view = GraphView(self.graph,self.graph.vp.f)
 
-    def get_actions(self):
+    def get_actions(self,filter_superseeded=True,none_for_win=True):
         actions = []
         for node in self.view.vertices():
             if self.view.vp.o[node]!=0:
@@ -90,19 +90,20 @@ class Graph_game():
                 neigh_indices.add(int(target))
                 count = target.out_degree()
                 if count==1:
-                    if self.owner_map[self.view.vp.o[target]] == self.onturn:
+                    if none_for_win and self.owner_map[self.view.vp.o[target]] == self.onturn:
                         return None
                     go_there = True
                 left_to_own += count
             deg = node.out_degree()
             actions.append((-10000*int(go_there)-deg+left_to_own/deg,int(node),neigh_indices))
         actions.sort()
+        if filter_superseeded:
         # Remove superseeded actions
-        for i in range(len(actions)-1,-1,-1):
-            for j in range(i-1,-1,-1):
-                if actions[i][2].issubset(actions[j][2]):
-                    del actions[i]
-                    break
+            for i in range(len(actions)-1,-1,-1):
+                for j in range(i-1,-1,-1):
+                    if actions[i][2].issubset(actions[j][2]):
+                        del actions[i]
+                        break
         return [x[1] for x in actions]
     
     def make_move(self,square_node):

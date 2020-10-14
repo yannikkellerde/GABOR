@@ -87,7 +87,7 @@ class Qango7x7_board(Board_game):
 
     def get_burgregel_blocked(self,b_count):
         self.inv_maps()
-        threadblock = set()
+        threatblock = set()
         block_depths = set([0])
         if b_count==0:
             blocked_sq = []
@@ -101,7 +101,7 @@ class Qango7x7_board(Board_game):
                           9,10,11,15,19,22,26,29,33,37,38,39,
                           3,21,27,45]
         blocked_moves = set(self.node_map_rev[x] for x in blocked_sq)
-        return blocked_moves,block_depths,threadblock
+        return blocked_moves,block_depths,threatblock
 
 class Qango7x7_plus(Graph_game):
     def __init__(self):
@@ -128,7 +128,7 @@ class Qango7x7_plus_board(Board_game):
         self.change_wsn()
 
     def change_wsn(self):
-        removals = [0,1,7,5,6,13,35,42,43,41,47,48]
+        removals = [0,1,5,6,7,13,35,42,43,41,47,48]
         new_wsn = set()
         for wsn in self.winsquarenums:
             new = set()
@@ -158,6 +158,7 @@ class Qango7x7_plus_board(Board_game):
             out+="#"+" "*re+"\n"
         out += "#"*(7+2)
         print(out)
+        return out
 
     def get_burgregel_blocked(self,b_count):
         self.inv_maps()

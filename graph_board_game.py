@@ -42,7 +42,7 @@ class Board_game():
         with open(disprovenfile,"rb") as f:
             self.disprovenset = pickle.load(f)
 
-    def check_move_val(self,moves,do_threat_search=True):
+    def check_move_val(self,moves,do_threat_search=True,priorize_sets=True):
         winmoves = self.game.win_threat_search(one_is_enough=False)
         if do_threat_search:
             self.game.view.gp["b"] = not self.game.view.gp["b"]
@@ -51,6 +51,7 @@ class Board_game():
         results = []
         storage = self.game.extract_storage()
         for move in moves:
+            val = "u"
             self.game.load_storage(storage)
             if do_threat_search and has_threat and move not in defense_vertices:
                 if self.game.onturn=="b":
@@ -64,7 +65,7 @@ class Board_game():
                     val = 1
                 elif self.game.hash in self.disprovenset:
                     val = -1
-                else:
+                if val=="u" or not priorize_sets:
                     if self.game.view.num_vertices() == 0:
                         val = 0
                     else:
@@ -80,8 +81,6 @@ class Board_game():
                                     val = 5
                                 else:
                                     val = 4
-                            else:
-                                val = "u"
             results.append(val)
         return results
 
@@ -108,3 +107,4 @@ class Board_game():
             out_str+="#\n"
         out_str += "#"*(root+2)
         print(out_str)
+        return out_str

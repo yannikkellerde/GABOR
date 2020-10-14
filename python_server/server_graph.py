@@ -1,7 +1,7 @@
 import sys
 sys.path.append("..")
 sys.path.append(".")
-from graph_tools_games import Tic_tac_toe, Qango6x6, Qango7x7
+from graph_tools_games import Tic_tac_toe, Qango6x6, Qango7x7, Qango7x7_plus
 import math
 import pickle
 import json
@@ -60,16 +60,14 @@ class Post_handler(SimpleHTTPRequestHandler):
         real_pos = [("f" if x==0 else ("b" if x==2 else "w")) for x in data["position"]]
         game.board.set_position(real_pos,"b" if data["onturn"]==1 else "w")
         game.board.draw_me()
-        moves = game.get_actions()
-        if moves is None:
-            moves = []
+        depth = len(list(filter(lambda x:x!="f",real_pos)))
+        moves = game.get_actions(filter_superseeded=depth not in block_depths,none_for_win=False)
         board_moves = [game.board.node_map[x] for x in moves]
         game.draw_me()
-        #if burgregel==2 and len(list(filter(lambda x:x!="f",real_pos)))==1:
-        #    print("heyo")
-        #    evals = game.board.check_move_val(moves,do_threat_search=False)
-        #else:
-        evals = game.board.check_move_val(moves)
+        if depth in threatblock:
+            evals = game.board.check_move_val(moves,do_threat_search=False)
+        else:
+            evals = game.board.check_move_val(moves)
         moves_with_eval = list(zip(board_moves, evals))
         # send the message back
         self._set_headers()
@@ -102,9 +100,12 @@ if __name__ == "__main__":
         game = Qango7x7()
     elif "tic_tac_toe"==my_folder:
         game = Tic_tac_toe()
+    elif my_folder == "qango7x7_plus":
+        game = Qango7x7_plus()
     else:
         raise ValueError(f"Game not found {my_folder}")
     burgregel = int(sys.argv[2])
+    blocked,block_depths,threatblock = game.board.get_burgregel_blocked(burgregel)
     game.board.load_sets(f"../proofsets/{my_folder}_{burgregel}p.pkl",f"../proofsets/{my_folder}_{burgregel}d.pkl")
     endgame_depth = 0
     open_browser()

@@ -7,7 +7,10 @@ solver.log
 *.dot
 *.odp#
 *.svg
+*.log
 json/
 gctest.py
 *.pyc
 old_functions.py
+secrets.json
+geckodriver

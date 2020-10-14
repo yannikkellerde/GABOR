@@ -3,7 +3,7 @@ from util import resources_avaliable,draw_pn_tree
 import gc
 import pickle
 import os,sys
-from graph_tools_games import Tic_tac_toe,Qango6x6,Qango7x7
+from graph_tools_games import Tic_tac_toe,Qango6x6,Qango7x7,Qango7x7_plus
 from graph_tools_game import Graph_game
 from data_magic import save_sets
 from graph_tool.all import *
@@ -129,7 +129,7 @@ class PN_search():
 
     def expand(self, n, threat_search=True, blocked_moves=None):
         self.game.load_storage(n[STORAGE])
-        moves = self.game.get_actions()
+        moves = self.game.get_actions(filter_superseeded=blocked_moves is None)
         if moves is None:
             if n[PROOFNODE]:
                 n[PN] = 0
@@ -264,6 +264,8 @@ if __name__ == "__main__":
         g = Qango7x7()
     elif game=="tic_tac_toe":
         g = Tic_tac_toe()
+    elif game=="qango7x7_plus":
+        g = Qango7x7_plus()
     else:
         raise ValueError(f"Game not found {game}")
     pn_s = PN_search(g,prooffile=f"proofsets/{game}_{burgregel}p.pkl",disprooffile=f"proofsets/{game}_{burgregel}d.pkl")
