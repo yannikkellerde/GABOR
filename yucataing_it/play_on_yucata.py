@@ -263,4 +263,4 @@ class Page_handler():
 
 if __name__ == "__main__":
     ph = Page_handler()
-    ph.do_one_evil()
+    ph.be_evil_for_a_while()
