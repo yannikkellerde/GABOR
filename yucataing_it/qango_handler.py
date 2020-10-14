@@ -25,6 +25,3 @@ class Qango_handler():
         ruleset = int(ruleset)
         move = self.ai.get_move(game_type,ruleset,onturn,position)
         return [str(move).encode()]
-        
-    def __call__(self,uri,query):
-        self.handle_get(uri,query)

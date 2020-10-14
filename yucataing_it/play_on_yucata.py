@@ -1,5 +1,6 @@
 import sys,os
 import random
+import requests
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException,StaleElementReferenceException
 from selenium.webdriver.support.ui import Select
@@ -7,12 +8,10 @@ import traceback
 import json
 sys.path.append("..")
 import time
-from ai_api import Ai_api
 
 class Page_handler():
     def __init__(self):
         self.driver = None
-        self.ai = Ai_api({"qango6x6":[0,3],"qango7x7_plus":[2]})
         self.logfolder = "logs"
         self.time_multiplier = 2
         self.lais = 10
@@ -20,10 +19,20 @@ class Page_handler():
         with open("secrets.json","r") as f:
             self.secrets = json.load(f)
 
+    def get_move_num(self,game_type,ruleset,position,onturn):
+        params = {"game_type":game_type,
+                  "ruleset":ruleset,
+                  "position":"".join(position),
+                  "onturn":onturn,
+                  "key":self.secrets["api_code"]}
+        r = requests.get("http://go.yannikkeller.de/qango", params=params)
+        return int(r.text)
+
     def play_move_game(self,game_id):
         removals = [0,1,5,6,7,13,35,42,43,41,47,48]
         plus_map = {x:x-len([y for y in removals if y<x]) for x in range(49)}
         gt_rs_map = {"QANGO 6 - Standard":("qango6x6",0),"QANGO 6 - Turnier":("qango6x6",3),"QANGO 7 Plus - Turnier":("qango7x7_plus",2)}
+        sq_num_map = {"qango6x6":36,"qango7x7_plus":37,"qango7x7":49}
         self.driver.get("https://www.yucata.de/de/Game/QANGO/{}#page".format(game_id))
         for _ in range(self.lais):
             time.sleep(1*self.time_multiplier)
@@ -31,19 +40,19 @@ class Page_handler():
                 info = self.driver.find_element_by_class_name("basicInfo")
                 tit = info.find_element_by_class_name("title")
                 game_type,ruleset = gt_rs_map[tit.get_attribute("innerText").split(": ")[1]]
+                squares = sq_num_map[game_type]
                 break
             except Exception as e:
                 print(traceback.format_exc())
         else:
             return False
-        g = self.ai.games[game_type][ruleset]
         for _ in range(self.lais):
             try:
-                position = ["f"]*g.board.squares
+                position = ["f"]*squares
                 board = self.driver.find_element_by_id("board")
                 board_images = board.find_elements_by_tag_name("img")
                 onturn = None
-                sqs = set(range(g.board.squares))
+                sqs = set(range(squares))
                 el_map = {}
                 for img in board_images:
                     my_id = img.get_attribute("id")
@@ -91,14 +100,14 @@ class Page_handler():
                 elif position[i] == "b":
                     position[i] = "w"
         print(position,onturn)
-        move = self.ai.get_move(game_type,ruleset,onturn,position)
+        move = self.get_move_num(game_type,ruleset,position,onturn)
         print(move)
         el_map[move].click()
         time.sleep(1*self.time_multiplier)
         self.driver.find_element_by_id("btn_finishTurn").click()
         filepath = os.path.join(self.logfolder,str(game_id)+".log")
-        with open(filepath,"a") as f:
-            f.write(g.board.draw_me(pos=position))
+        #with open(filepath,"a") as f:
+        #    f.write(g.board.draw_me(pos=position))
         return True
 
     def login(self):
@@ -184,27 +193,59 @@ class Page_handler():
 
     def do_one_evil(self):
         self.driver = webdriver.Firefox()
-        self.login()
+        try:
+            self.login()
+        except Exception as e:
+            print(traceback.format_exc())
+            self.driver.quit()
+            return False
         time.sleep(1*self.time_multiplier)
         while 1:
-            game_id = self.find_onturn_game()
+            try:
+                game_id = self.find_onturn_game()
+            except Exception as e:
+                print(traceback.format_exc())
+                self.driver.quit()
+                return False
             time.sleep(1*self.time_multiplier)
             if game_id is None:
                 break
-            self.play_move_game(game_id)
+            try:
+                self.play_move_game(game_id)
+            except Exception as e:
+                print(traceback.format_exc())
+                self.driver.quit()
+                return False
             time.sleep(1*self.time_multiplier)
-        inv_count = self.check_invitation_count()
+        try:
+            inv_count = self.check_invitation_count()
+        except Exception as e:
+            print(traceback.format_exc())
+            self.driver.quit()
+            return False
         print(inv_count)
         if inv_count is None:
             return False
         time.sleep(1*self.time_multiplier)
         if inv_count < 2:
-            self.send_new_invitation()
+            try:
+                self.send_new_invitation()
+            except Exception as e:
+                print(traceback.format_exc())
+                self.driver.quit()
+                return False
         self.driver.quit()
 
     def be_evil_for_a_while(self):
         while 1:
-            self.do_one_evil()
+            try:
+                self.do_one_evil()
+            except Exception as e:
+                print(traceback.format_exc())
+                try:
+                    self.driver.quit()
+                except Exception as e:
+                    print(traceback.format_exc())
             sleeptime = random.randint(60,36000)
             time.sleep(sleeptime)
 
