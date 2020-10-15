@@ -64,10 +64,7 @@ class Post_handler(SimpleHTTPRequestHandler):
         moves = game.get_actions(filter_superseeded=depth not in block_depths,none_for_win=False)
         board_moves = [game.board.node_map[x] for x in moves]
         game.draw_me()
-        if depth in threatblock:
-            evals = game.board.check_move_val(moves,do_threat_search=False)
-        else:
-            evals = game.board.check_move_val(moves)
+        evals = game.board.check_move_val(moves,do_threat_search=False)
         moves_with_eval = list(zip(board_moves, evals))
         # send the message back
         self._set_headers()
