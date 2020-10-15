@@ -1,6 +1,7 @@
 import sys,os
 import random
 import requests
+import numpy as np
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException,StaleElementReferenceException
 from selenium.webdriver.support.ui import Select
@@ -201,10 +202,13 @@ class Page_handler():
             return False
         time.sleep(1*self.time_multiplier)
         while 1:
-            try:
-                game_id = self.find_onturn_game()
-            except Exception as e:
-                print(traceback.format_exc())
+            for _ in range(self.lais):
+                try:
+                    game_id = self.find_onturn_game()
+                    break
+                except Exception as e:
+                    print(traceback.format_exc())
+            else:
                 self.driver.quit()
                 return False
             time.sleep(1*self.time_multiplier)
@@ -258,7 +262,7 @@ class Page_handler():
                     self.driver.quit()
                 except Exception as e:
                     print(traceback.format_exc())
-            sleeptime = random.randint(60,36000)
+            sleeptime = np.random.choice([120,3600,10000,36000],p=[0.5,0.3,0.15,0.05])
             self.wait(sleeptime)
 
 if __name__ == "__main__":
