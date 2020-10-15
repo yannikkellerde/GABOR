@@ -262,7 +262,7 @@ class Page_handler():
                     self.driver.quit()
                 except Exception as e:
                     print(traceback.format_exc())
-            sleeptime = np.random.choice([120,3600,10000,36000],p=[0.5,0.3,0.15,0.05])
+            sleeptime = np.random.choice([120,3600,10000,36000],p=[0.9,0.05,0.03,0.02])
             self.wait(sleeptime)
 
 if __name__ == "__main__":
