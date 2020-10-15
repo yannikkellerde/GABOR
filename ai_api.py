@@ -31,6 +31,8 @@ class Ai_api():
         if depth==0:
             blocked,block_depths,threatblock = g.board.get_burgregel_blocked(ruleset)
         moves = g.get_actions(filter_superseeded=(depth!=0 or (depth not in block_depths)),none_for_win=False)
+        if len(moves)==0:
+            return position.index("f")
         if depth==0 and depth in block_depths:
             moves = [m for m in moves if m not in blocked]
         board_moves = [g.board.node_map[x] for x in moves]
