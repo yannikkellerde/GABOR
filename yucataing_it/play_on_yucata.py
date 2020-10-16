@@ -80,12 +80,12 @@ class Page_handler():
                                 else:
                                     position[sq_num] = "w"
                 assert len(sqs)<2
-                assert onturn is not None
                 if len(sqs)==0:
                     onturn = "b"
                 else:
                     left_sq, = sqs
                     position[left_sq] = last_sq
+                assert onturn is not None
                 break
             except StaleElementReferenceException:
                 print(traceback.format_exc())
@@ -193,7 +193,7 @@ class Page_handler():
         return True
 
     def do_one_evil(self):
-        self.driver = webdriver.Chrome("/usr/bin/chromedriver")
+        self.driver = webdriver.Firefox()
         try:
             self.login()
         except Exception as e:
