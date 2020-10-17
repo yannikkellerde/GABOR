@@ -3,7 +3,7 @@ import random
 import requests
 import numpy as np
 from selenium import webdriver
-from selenium.common.exceptions import NoSuchElementException,StaleElementReferenceException
+from selenium.common.exceptions import NoSuchElementException,StaleElementReferenceException,ElementNotInteractableException
 from selenium.webdriver.support.ui import Select
 import traceback
 import json
@@ -105,7 +105,17 @@ class Page_handler():
         print(move)
         el_map[move].click()
         time.sleep(1*self.time_multiplier)
-        self.driver.find_element_by_id("btn_finishTurn").click()
+        try:
+            self.driver.find_element_by_id("btn_finishTurn").click()
+        except ElementNotInteractableException as e:
+            print(e)
+            try:
+                self.driver.find_element_by_id("btn_nextGame").click()
+            except Exception as e:
+                print(e)
+                self.driver.find_element_by_id("btn_extend+").click()
+                time.sleep(0.5)
+                self.driver.find_element_by_id("btn_acceptTie").click()
         filepath = os.path.join(self.logfolder,str(game_id)+".log")
         #with open(filepath,"a") as f:
         #    f.write(g.board.draw_me(pos=position))
