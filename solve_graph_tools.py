@@ -21,7 +21,7 @@ STORAGE = 6 # A tuple containing 1. an owner map, 2. a filter map, 3. onturn boo
 
 
 class PN_search():
-    def __init__(self, game:Graph_game, drawproves=False,prooffile="proofsets/provenset.pkl",disprooffile="proofsets/disprovenset.pkl"):
+    def __init__(self, game:Graph_game, drawproves=False):
         self.game = game
         self.ttable = {}
         self.provenset = set()
@@ -32,10 +32,9 @@ class PN_search():
         self.drawproves = drawproves
         self.prooffile = prooffile
         self.disprooffile = disprooffile
-        os.makedirs(os.path.dirname(self.prooffile),exist_ok=True)
-        self.loadsets()
 
     def loadsets(self):
+        os.makedirs(os.path.dirname(self.prooffile),exist_ok=True)
         try:
             with open(self.prooffile,"rb") as file:
                 self.provenset = pickle.load(file)
@@ -193,10 +192,13 @@ class PN_search():
         self.alive_graphs -= 1
 
     def pn_search(self,onturn_proves=True,verbose=True,save=True,burgregel=2):
+        blocked,block_depths,threadblock = self.game.board.get_burgregel_blocked(burgregel)
+        self.prooffile = f"{self.game.onturn}_proofsets/{self.game}_{burgregel}p.pkl"
+        self.disprooffile=f"{self.game.onturn}_proofsets/{self.game}_{burgregel}d.pkl"
+        self.loadsets()
         self.game.hashme()
         hashval = self.game.hash
         self.root = [1,1,hashval,[],[],onturn_proves,self.game.extract_storage()]
-        blocked,block_depths,threadblock = self.game.board.get_burgregel_blocked(burgregel)
         self.alive_graphs+=1
         self.node_count += 1
         self.ttable[hashval] = self.root
@@ -268,5 +270,5 @@ if __name__ == "__main__":
         g = Qango7x7_plus()
     else:
         raise ValueError(f"Game not found {game}")
-    pn_s = PN_search(g,prooffile=f"proofsets/{game}_{burgregel}p.pkl",disprooffile=f"proofsets/{game}_{burgregel}d.pkl")
+    pn_s = PN_search(g)
     pn_s.pn_search(onturn_proves=True,burgregel=burgregel)

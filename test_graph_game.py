@@ -113,10 +113,12 @@ def test_pos_from_graph():
                                 "ffffff"
                                 "ffffff"
                                 "ffffff"
-                                "fffbff"
-                                "ffffff")
-    game.board.onturn = "w"
+                                "fffwff"
+                                "fffbff")
+    game.board.onturn = "b"
     game.graph_from_board()
+    game.hashme()
+    print(game.hash)
     game.board.inv_maps()
     reco_pos = game.board.pos_from_graph()
     game.board.draw_me(reco_pos)
@@ -147,9 +149,10 @@ def test_ai_api():
                 "ffffff"
                 "ffffff"
                 "ffffff"
-                "fffbff")
-    onturn = "w"
-    print(ai.get_move("qango6x6",3,onturn,pos))
+                "ffffff")
+
+    onturn = "b"
+    print(ai.get_move("qango6x6",1,onturn,pos))
 
 if __name__ == "__main__":
     #test_moving()

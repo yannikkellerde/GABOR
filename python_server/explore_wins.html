@@ -76,7 +76,9 @@ function show_moves(){
         for (var i=0;i<miteval.length;i++){
             var move = miteval[i][0];
             var evaluation = miteval[i][1];
-            var evalconvert = {"u":"Unknown",0:"Draw",1:"Black wins (Proofset)","-1":"White wins or draw",2:"White wins (Threat search)",3:"Black wins (Threat search)",4:"White wins (Forced Move)",5:"Black wins (Forced Move)"}
+            var evalconvert = {"-4":"White wins (Forced Move)","-3":"White wins (Threat search)","-2":"White wins (Proofset)",
+                               "-1":"White wins or draw","u":"Unknown",0:"Draw",1:"Black wins or draw",2:"Black wins (Proofset)",
+                               3:"Black wins (Threat search)",4:"Black wins (Forced Move)"}
             var tr = document.createElement("tr");
             var move_elem = document.createElement("td");
             var eval_elem = document.createElement("td");

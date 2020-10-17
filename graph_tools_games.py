@@ -11,6 +11,8 @@ class Qango6x6(Graph_game):
         self.board = Qango6x6_board()
         self.board.game = self
         self.graph_from_board()
+    def __str__(self):
+        return "qango6x6"
 
 class Qango6x6_board(Board_game):
     def __init__(self):
@@ -27,7 +29,6 @@ class Qango6x6_board(Board_game):
         remove_useless_wsn(self.winsquarenums)
 
     def get_burgregel_blocked(self,b_count):
-        self.inv_maps()
         threadblock = set()
         if b_count==0:
             blocked_sq = []
@@ -42,6 +43,18 @@ class Qango6x6_board(Board_game):
         elif b_count==3:
             blocked_sq = [7,8,9,10,13,14,15,16,19,20,21,22,25,26,27,28]
             block_depths = set([0])
+        elif b_count==4:
+            self.position = list("ffffff"
+                                 "ffffff"
+                                 "ffffff"
+                                 "ffffff"
+                                 "fffwff"
+                                 "fffbff")
+            self.onturn = "b"
+            self.game.graph_from_board()
+            blocked_sq = [22]
+            block_depths = set([0])
+        self.inv_maps()
         blocked_moves = set(self.node_map_rev[x] for x in blocked_sq)
         return blocked_moves,block_depths,threadblock
 
@@ -51,6 +64,8 @@ class Tic_tac_toe(Graph_game):
         self.board = Tic_tac_toe_board()
         self.board.game = self
         self.graph_from_board()
+    def __str__(self):
+        return "tic_tac_toe"
 
 class Tic_tac_toe_board(Board_game):
     def __init__(self):
@@ -67,6 +82,8 @@ class Qango7x7(Graph_game):
         self.board = Qango7x7_board()
         self.board.game = self
         self.graph_from_board()
+    def __str__(self):
+        return "qango7x7"
 
 class Qango7x7_board(Board_game):
     def __init__(self):
@@ -109,6 +126,8 @@ class Qango7x7_plus(Graph_game):
         self.board = Qango7x7_plus_board()
         self.board.game = self
         self.graph_from_board()
+    def __str__(self):
+        return "qango7x7_plus"
 
 class Qango7x7_plus_board(Board_game):
     def __init__(self):

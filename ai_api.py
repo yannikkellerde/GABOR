@@ -10,14 +10,28 @@ basepath = os.path.abspath(os.path.dirname(__file__))
 class Ai_api():
     def __init__(self,games_with_rulsets):
         self.games = {}
-        self.value_prio = {"w":[2,4,-1,0,"u",1,5,3],
-                           "b":[3,5,1,0,"u",-1,2,4]}
+        self.value_prio = {"w":[-4,-3,-2,-1,0,"u",1,2,3,4],
+                           "b":[4,3,2,1,0,"u",-1,-2,-3,-4]}
         for game,rulesets in games_with_rulsets.items():
             rulemap = {}
             self.games[game] = rulemap
+            dummy = game_map[game]()
+            try:
+                dummy.board.load_sets(provenfile_black=os.path.join(basepath,f"proofsets/full_game/b_{dummy}_p.pkl"),
+                                    disprovenfile_black=os.path.join(basepath,f"proofsets/full_game/b_{dummy}_d.pkl"))
+            except FileNotFoundError as e:
+                print(e)
+            try:
+                dummy.board.load_sets(provenfile_white=os.path.join(basepath,f"proofsets/full_game/w_{dummy}_p.pkl"),
+                                    disprovenfile_white=os.path.join(basepath,f"proofsets/full_game/w_{dummy}_d.pkl"))
+            except FileNotFoundError as e:
+                print(e)
             for rule in rulesets:
                 g = game_map[game]()
-                g.board.load_sets(os.path.join(basepath,f"proofsets/{game}_{rule}p.pkl"),os.path.join(basepath,f"proofsets/{game}_{rule}d.pkl"))
+                g.board.disprovenset_black = dummy.board.disprovenset_black
+                g.board.disprovenset_white = dummy.board.disprovenset_white
+                g.board.provenset_black = dummy.board.provenset_black
+                g.board.provenset_white = dummy.board.provenset_white
                 rulemap[rule] = g
     
     def get_move(self,game,ruleset,color,position):

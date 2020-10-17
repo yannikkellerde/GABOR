@@ -61,7 +61,7 @@ class Post_handler(SimpleHTTPRequestHandler):
         game.board.set_position(real_pos,"b" if data["onturn"]==1 else "w")
         game.board.draw_me()
         depth = len(list(filter(lambda x:x!="f",real_pos)))
-        moves = game.get_actions(filter_superseeded=depth not in block_depths,none_for_win=False)
+        moves = game.get_actions(filter_superseeded=False,none_for_win=False)
         board_moves = [game.board.node_map[x] for x in moves]
         game.draw_me()
         evals = game.board.check_move_val(moves,do_threat_search=False)
@@ -101,9 +101,16 @@ if __name__ == "__main__":
         game = Qango7x7_plus()
     else:
         raise ValueError(f"Game not found {my_folder}")
-    burgregel = int(sys.argv[2])
-    blocked,block_depths,threatblock = game.board.get_burgregel_blocked(burgregel)
-    game.board.load_sets(f"../proofsets/{my_folder}_{burgregel}p.pkl",f"../proofsets/{my_folder}_{burgregel}d.pkl")
+    try:
+        game.board.load_sets(provenfile_black=f"../proofsets/full_game/b_{my_folder}_p.pkl",
+                            disprovenfile_black=f"../proofsets/full_game/b_{my_folder}_d.pkl")
+    except FileNotFoundError as e:
+        print(e)
+    try:
+        game.board.load_sets(provenfile_white=f"../proofsets/full_game/w_{my_folder}p.pkl",
+                            disprovenfile_white=f"../proofsets/full_game/w_{my_folder}d.pkl")
+    except FileNotFoundError as e:
+        print(e)
     endgame_depth = 0
     open_browser()
     start_server()

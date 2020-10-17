@@ -14,8 +14,10 @@ class Board_game():
         self.onturn = "b"
         self.node_map = dict()
         self.wp_map = dict()
-        self.provenset = set()
-        self.disprovenset = set()
+        self.provenset_black = set()
+        self.disprovenset_black = set()
+        self.provenset_white = set()
+        self.disprovenset_white = set()
     
     def inv_maps(self):
         self.wp_map_rev = {value:key for key,value in self.wp_map.items()}
@@ -36,11 +38,19 @@ class Board_game():
                     pos[sq] = owner
         return pos
 
-    def load_sets(self,provenfile,disprovenfile):
-        with open(provenfile,"rb") as f:
-            self.provenset = pickle.load(f)
-        with open(disprovenfile,"rb") as f:
-            self.disprovenset = pickle.load(f)
+    def load_sets(self,provenfile_black=None,disprovenfile_black=None,provenfile_white=None,disprovenfile_white=None):
+        if provenfile_black is not None:
+            with open(provenfile_black,"rb") as f:
+                self.provenset_black = pickle.load(f)
+        if disprovenfile_black is not None:
+            with open(disprovenfile_black,"rb") as f:
+                self.disprovenset_black = pickle.load(f)
+        if provenfile_white is not None:
+            with open(provenfile_white,"rb") as f:
+                self.provenset_white = pickle.load(f)
+        if disprovenfile_white is not None:
+            with open(disprovenfile_white,"rb") as f:
+                self.disprovenset_white = pickle.load(f)
 
     def check_move_val(self,moves,do_threat_search=True,priorize_sets=True):
         winmoves = self.game.win_threat_search(one_is_enough=False)
@@ -55,15 +65,19 @@ class Board_game():
             self.game.load_storage(storage)
             if do_threat_search and has_threat and move not in defense_vertices:
                 if self.game.onturn=="b":
-                    val = 2
+                    val = -3
                 else:
                     val = 3
             else:
                 self.game.make_move(move)
                 self.game.hashme()
-                if self.game.hash in self.provenset:
+                if self.game.hash in self.provenset_white:
+                    val = -2
+                elif self.game.hash in self.provenset_black:
+                    val = 2
+                elif self.game.hash in self.disprovenset_white:
                     val = 1
-                elif self.game.hash in self.disprovenset:
+                elif self.game.hash in self.disprovenset_black:
                     val = -1
                 if val=="u" or not priorize_sets:
                     if self.game.view.num_vertices() == 0:
@@ -71,16 +85,16 @@ class Board_game():
                     else:
                         if move in winmoves:
                             if self.game.onturn=="b":
-                                val = 4
+                                val = -4
                             else:
-                                val = 5
+                                val = 4
                         else:
                             movs = len(self.game.win_threat_search(one_is_enough=True))>0
                             if movs:
                                 if self.game.onturn=="b":
-                                    val = 5
-                                else:
                                     val = 4
+                                else:
+                                    val = -4
             results.append(val)
         return results
 
