@@ -149,10 +149,10 @@ def test_ai_api():
                 "ffffff"
                 "ffffff"
                 "ffffff"
-                "ffffff")
+                "fffffff")
 
     onturn = "b"
-    print(ai.get_move("qango6x6",1,onturn,pos))
+    print(ai.get_move("qango7x7_plus",2,onturn,pos))
 
 if __name__ == "__main__":
     #test_moving()

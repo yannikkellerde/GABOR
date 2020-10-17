@@ -30,8 +30,6 @@ class PN_search():
         self.alive_graphs = 0
         self.proofadds = [0,0]
         self.drawproves = drawproves
-        self.prooffile = prooffile
-        self.disprooffile = disprooffile
 
     def loadsets(self):
         os.makedirs(os.path.dirname(self.prooffile),exist_ok=True)
@@ -193,8 +191,9 @@ class PN_search():
 
     def pn_search(self,onturn_proves=True,verbose=True,save=True,burgregel=2):
         blocked,block_depths,threadblock = self.game.board.get_burgregel_blocked(burgregel)
-        self.prooffile = f"{self.game.onturn}_proofsets/{self.game}_{burgregel}p.pkl"
-        self.disprooffile=f"{self.game.onturn}_proofsets/{self.game}_{burgregel}d.pkl"
+        prove_color = self.game.onturn if onturn_proves else ("w" if self.game.onturn=="b" else "b")
+        self.prooffile = f"proofsets/{prove_color}_{self.game}_{burgregel}p.pkl"
+        self.disprooffile=f"proofsets/{prove_color}_{self.game}_{burgregel}d.pkl"
         self.loadsets()
         self.game.hashme()
         hashval = self.game.hash
@@ -271,4 +270,5 @@ if __name__ == "__main__":
     else:
         raise ValueError(f"Game not found {game}")
     pn_s = PN_search(g)
-    pn_s.pn_search(onturn_proves=True,burgregel=burgregel)
+    onturn_proves = not (len(sys.argv)>3 and sys.argv[3].lower()=="false")
+    pn_s.pn_search(onturn_proves=onturn_proves,burgregel=burgregel)

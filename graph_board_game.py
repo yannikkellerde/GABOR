@@ -77,8 +77,11 @@ class Board_game():
                     val = 2
                 elif self.game.hash in self.disprovenset_white:
                     val = 1
-                elif self.game.hash in self.disprovenset_black:
-                    val = -1
+                if self.game.hash in self.disprovenset_black:
+                    if val == 1:
+                        val = 0
+                    elif val =="u":
+                        val = -1
                 if val=="u" or not priorize_sets:
                     if self.game.view.num_vertices() == 0:
                         val = 0

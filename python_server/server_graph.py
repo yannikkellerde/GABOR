@@ -107,8 +107,8 @@ if __name__ == "__main__":
     except FileNotFoundError as e:
         print(e)
     try:
-        game.board.load_sets(provenfile_white=f"../proofsets/full_game/w_{my_folder}p.pkl",
-                            disprovenfile_white=f"../proofsets/full_game/w_{my_folder}d.pkl")
+        game.board.load_sets(provenfile_white=f"../proofsets/full_game/w_{my_folder}_p.pkl",
+                            disprovenfile_white=f"../proofsets/full_game/w_{my_folder}_d.pkl")
     except FileNotFoundError as e:
         print(e)
     endgame_depth = 0
