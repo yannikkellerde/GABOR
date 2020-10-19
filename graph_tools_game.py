@@ -7,6 +7,7 @@ import time
 import numpy as np
 import pickle
 import matplotlib.pyplot as plt
+import time
 
 from graph_tool.all import *
 from graph_tools_hashing import wl_hash
@@ -277,7 +278,9 @@ class Graph_game():
         else:
             return set(), False, []
 
-    def win_threat_search(self,one_is_enough=False):
+    def win_threat_search(self,one_is_enough=False,until_time=None):
+        if until_time is not None and time.time() > until_time:
+            return set()
         force_me_to = None
         vert_inds = dict()
         double_threat = dict()
@@ -330,7 +333,7 @@ class Graph_game():
                 continue
             self.make_move(ind)
             self.make_move(vert_inds[ind])
-            if len(self.win_threat_search(one_is_enough=True)) > 0:
+            if len(self.win_threat_search(one_is_enough=True,until_time=until_time)) > 0:
                 winmoves.add(ind)
                 if one_is_enough:
                     return winmoves

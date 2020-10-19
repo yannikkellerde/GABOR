@@ -64,7 +64,7 @@ class Post_handler(SimpleHTTPRequestHandler):
         moves = game.get_actions(filter_superseeded=False,none_for_win=False)
         board_moves = [game.board.node_map[x] for x in moves]
         game.draw_me()
-        evals = game.board.check_move_val(moves,do_threat_search=False)
+        evals = game.board.check_move_val(moves)
         moves_with_eval = list(zip(board_moves, evals))
         # send the message back
         self._set_headers()

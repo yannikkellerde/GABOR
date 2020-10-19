@@ -1,6 +1,7 @@
 from graph_tool.all import *
 import pickle
 import math
+import time
 
 class Board_game():
     winsquarenums:set
@@ -52,18 +53,18 @@ class Board_game():
             with open(disprovenfile_white,"rb") as f:
                 self.disprovenset_white = pickle.load(f)
 
-    def check_move_val(self,moves,do_threat_search=True,priorize_sets=True):
-        winmoves = self.game.win_threat_search(one_is_enough=False)
-        if do_threat_search:
-            self.game.view.gp["b"] = not self.game.view.gp["b"]
-            defense_vertices,has_threat,_ = self.game.threat_search()
-            self.game.view.gp["b"] = not self.game.view.gp["b"]
+    def check_move_val(self,moves,priorize_sets=True):
+        winmoves = self.game.win_threat_search(one_is_enough=False,until_time=time.time()+5)
+        self.game.view.gp["b"] = not self.game.view.gp["b"]
+        defense_vertices,has_threat,_ = self.game.threat_search()
+        self.game.view.gp["b"] = not self.game.view.gp["b"]
         results = []
         storage = self.game.extract_storage()
+        print(defense_vertices,has_threat)
         for move in moves:
             val = "u"
             self.game.load_storage(storage)
-            if do_threat_search and has_threat and move not in defense_vertices:
+            if has_threat and move not in defense_vertices and move not in winmoves:
                 if self.game.onturn=="b":
                     val = -3
                 else:
@@ -92,7 +93,7 @@ class Board_game():
                             else:
                                 val = 4
                         else:
-                            movs = len(self.game.win_threat_search(one_is_enough=True))>0
+                            movs = len(self.game.win_threat_search(one_is_enough=True,until_time=time.time()+0.5))>0
                             if movs:
                                 if self.game.onturn=="b":
                                     val = 4

@@ -50,7 +50,7 @@ class Ai_api():
         if depth==0 and depth in block_depths:
             moves = [m for m in moves if m not in blocked]
         board_moves = [g.board.node_map[x] for x in moves]
-        evals = g.board.check_move_val(moves,priorize_sets=False,do_threat_search=False)
+        evals = g.board.check_move_val(moves,priorize_sets=False)
         moves_with_eval = list(zip(board_moves,evals))
         best = math.inf
         best_move = []
