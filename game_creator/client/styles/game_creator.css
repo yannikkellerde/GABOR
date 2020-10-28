@@ -1,16 +1,36 @@
 #board{
-    left: 550px;
+    position: absolute;
+    left: 800px;
     top: 50px;
+    border-spacing: 0px;
+    border-collapse: collapse;
 }
-#board td{
+#board td.square{
     border:1px solid black;
+}
+#board td.deleted{
+    background-color:transparent;
+    border:none;
 }
 aside{
     position:fixed;
     left:0px;
     top:0px;
-    width:500px;
+    width:650px;
     height:100%;
     overflow-y:scroll;
     background-color: #19222a;
+}
+#color-palette{
+    position: relative;
+    width: calc(100% - 40px);
+    padding: 20px 20px 20px 20px;
+    height: auto;
+}
+#color-palette div{
+    position: relative;
+    display: inline-block;
+    width:40px;
+    height:40px;
+    margin:10px 10px 10px 10px;
 }

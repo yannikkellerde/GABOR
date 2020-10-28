@@ -19,15 +19,22 @@
             <input id="num_rows" class="slider_input" type="range" value=30 data-max=20>
             <label for="slider" class="slider_label">0</label>
         </div>
+        <div id="color-palette"></div>
     </aside>
 <script src="js/slider.js"></script>
 <script>
 const config = {
-    rows:0,cols:0,name:"default",winsquarecombos:[],"squares":0,"blocked_squares":{"default":[]},sq_colors:[],board_height:750,board_width:750
+    rows:0,cols:0,name:"default",winsquarecombos:[],"squares":0,"blocked_squares":{"default":[]},sq_colors:[],board_height:850,board_width:850
 }
-const colors = ["#0000ff","#ff0000","#00cc00","#003300","#ff00ff","#6600cc","#ffffff","#000000","#ff6600"]
-const table = document.getElementById("board")
-const tbody = document.getElementById("square_holder")
+const colors = ["#0000ff","#ff0000","#00cc00","#003300","#ff00ff","#6600cc","#ffffff","#000000","#ff6600"];
+const table = document.getElementById("board");
+const tbody = document.getElementById("square_holder");
+const col_palette = document.getElementById("color-palette");
+colors.forEach(col => {
+    const div = document.createElement("div");
+    div.style.backgroundColor = col;
+    col_palette.appendChild(div);
+})
 function display_board(){
     const rect = table.getBoundingClientRect()
     const sq_size = Math.min(config.board_width/config.cols,config.board_height/config.rows)
@@ -37,14 +44,57 @@ function display_board(){
         sq_row.forEach(sq_col => {
             const td = document.createElement("td");
             td.style.width = td.style.height = sq_size+"px";
-            td.style.color = sq_col;
+            if (sq_col=="deleted"){
+                td.className = "deleted"
+            }
+            else{
+                td.style.backgroundColor = sq_col;
+                td.className = "square"
+            }
             tr.appendChild(td);
         })
         tbody.appendChild(tr)
     });
 }
-function change_rows_cols(rows,cols){
-    
+
+function remove_stupid_winsquarecombs(){
+    for (var i = config.winsquarecombos.length-1; i > -1 ; i--){
+        stupid = false;
+        config.winsquarecombos[i].forEach(sq => {
+            if (sq[0]>config.rows || sq[1]>config.cols || sq_colors[sq[0]][sq[1]]=="deleted"){
+                stupid = true;
+            }
+        });
+        if (stupid){
+            config.winsquarecombos.splice(i,1)
+        }
+    }
 }
+function change_rows_cols(rows,cols){
+    config.rows = rows
+    config.cols = cols
+    config.sq_colors = config.sq_colors.slice(0,rows)
+    for (var i=config.sq_colors.length;i<rows;i++){
+        config.sq_colors.push(new Array(cols).fill(colors[0]))
+    }
+    for (var i = 0; i < config.sq_colors.length; i++){
+        config.sq_colors[i] = config.sq_colors[i].slice(0,cols)
+        for (var j = config.sq_colors[i].length; j < cols; j++){
+            config.sq_colors[i].push(colors[0]);
+        }
+    }
+    remove_stupid_winsquarecombs();
+    display_board();
+}
+const nc = document.getElementById("num_columns");
+change_rows_cols(config.rows,Number(nc.getAttribute("data-value")));
+nc.addEventListener("mouseup", function(event){
+    change_rows_cols(config.rows,Number(nc.getAttribute("data-value")));
+});
+const nr = document.getElementById("num_rows");
+change_rows_cols(Number(nr.getAttribute("data-value")),config.cols)
+nr.addEventListener("mouseup", function(event){
+    change_rows_cols(Number(nr.getAttribute("data-value")),config.cols);
+});
 </script>
 </body>
