@@ -2,8 +2,32 @@ from graph_tools_game import Graph_game
 from graph_board_game import Board_game
 from util import findfivers, findsquares, remove_useless_wsn
 from graph_tool.all import *
+import json
 import matplotlib.pyplot as plt
 from collections import defaultdict
+
+class Json_game(Graph_game):
+    def __init__(self,json_path):
+        super().__init__()
+        with open(json_path,"r") as f:
+            self.config = json.load(f)
+        self.board = Json_board(self.config)
+        self.board.game = self
+        self.graph_from_board()
+    def __str__(self):
+        return self.config["name"]
+
+class Json_board(Board_game):
+    def __init__(self,config):
+        super().__init__()
+        self.squares = config["squares"]
+        self.position = ["f" for _ in range(self.squares)]
+        self.winsquarenums = set(frozenset(x) for x in config["winsquarenums"])
+        self.blocked_sq = config["blocked_squares"]
+        remove_useless_wsn(self.winsquarenums)
+
+    def get_blocked_squares(self,rulename):
+        return self.blocked_sq[rulename],set([0]),set()
 
 class Qango6x6(Graph_game):
     def __init__(self):
@@ -28,7 +52,7 @@ class Qango6x6_board(Board_game):
         self.winsquarenums.update(findfivers(self.squares))
         remove_useless_wsn(self.winsquarenums)
 
-    def get_burgregel_blocked(self,b_count):
+    def get_blocked_squares(self,b_count):
         threadblock = set()
         if b_count==0:
             blocked_sq = []
@@ -102,7 +126,7 @@ class Qango7x7_board(Board_game):
         self.winsquarenums.update(findfivers(self.squares))
         remove_useless_wsn(self.winsquarenums)
 
-    def get_burgregel_blocked(self,b_count):
+    def get_blocked_squares(self,b_count):
         self.inv_maps()
         threatblock = set()
         block_depths = set([0])
@@ -179,7 +203,7 @@ class Qango7x7_plus_board(Board_game):
         print(out)
         return out
 
-    def get_burgregel_blocked(self,b_count):
+    def get_blocked_squares(self,b_count):
         self.inv_maps()
         threadblock = set()
         block_depths = set([0])

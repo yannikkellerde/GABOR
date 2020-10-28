@@ -190,7 +190,7 @@ class PN_search():
         self.alive_graphs -= 1
 
     def pn_search(self,onturn_proves=True,verbose=True,save=True,burgregel=2):
-        blocked,block_depths,threadblock = self.game.board.get_burgregel_blocked(burgregel)
+        blocked,block_depths,threadblock = self.game.board.get_blocked_squares(burgregel)
         prove_color = self.game.onturn if onturn_proves else ("w" if self.game.onturn=="b" else "b")
         self.prooffile = f"proofsets/{prove_color}_{self.game}_{burgregel}p.pkl"
         self.disprooffile=f"proofsets/{prove_color}_{self.game}_{burgregel}d.pkl"

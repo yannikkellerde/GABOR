@@ -1,0 +1,50 @@
+<head>
+    <link rel="stylesheet" href="styles/game_creator.css">
+    <link rel="stylesheet" href="styles/slider.css">
+    <meta charset="utf-8"/>
+</head>
+<body>
+    <table id="board">
+        <tbody id="square_holder">
+        </tbody>
+    </table>
+    <aside>
+        <div class="slider_holder">
+            <label class="slider_name">Number of columns</label>
+            <input id="num_columns" class="slider_input" type="range" value=30 data-max=20>
+            <label for="slider" class="slider_label">0</label>
+        </div>
+        <div class="slider_holder">
+            <label class="slider_name">Number of rows</label>
+            <input id="num_rows" class="slider_input" type="range" value=30 data-max=20>
+            <label for="slider" class="slider_label">0</label>
+        </div>
+    </aside>
+<script src="js/slider.js"></script>
+<script>
+const config = {
+    rows:0,cols:0,name:"default",winsquarecombos:[],"squares":0,"blocked_squares":{"default":[]},sq_colors:[],board_height:750,board_width:750
+}
+const colors = ["#0000ff","#ff0000","#00cc00","#003300","#ff00ff","#6600cc","#ffffff","#000000","#ff6600"]
+const table = document.getElementById("board")
+const tbody = document.getElementById("square_holder")
+function display_board(){
+    const rect = table.getBoundingClientRect()
+    const sq_size = Math.min(config.board_width/config.cols,config.board_height/config.rows)
+    tbody.innerHTML = ""
+    config.sq_colors.forEach(sq_row => {
+        const tr = document.createElement("tr");
+        sq_row.forEach(sq_col => {
+            const td = document.createElement("td");
+            td.style.width = td.style.height = sq_size+"px";
+            td.style.color = sq_col;
+            tr.appendChild(td);
+        })
+        tbody.appendChild(tr)
+    });
+}
+function change_rows_cols(rows,cols){
+    
+}
+</script>
+</body>

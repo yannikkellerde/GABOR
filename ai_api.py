@@ -43,7 +43,7 @@ class Ai_api():
         g.graph_from_board()
         depth = len(list(filter(lambda x:x!="f",position)))
         if depth==0:
-            blocked,block_depths,threatblock = g.board.get_burgregel_blocked(ruleset)
+            blocked,block_depths,threatblock = g.board.get_blocked_squares(ruleset)
         moves = g.get_actions(filter_superseeded=(depth!=0 or (depth not in block_depths)),none_for_win=False)
         if len(moves)==0:
             return position.index("f")
