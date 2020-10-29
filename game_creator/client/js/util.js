@@ -22,6 +22,10 @@ export function arr_set_equal(a,b){
     }
     return a.every(arr=>arr_contains(b,arr));
 }
+export function issubset(a,b){
+    // Check if a is a subset of b, with the elements of a and b being array
+    return a.every(arr=>arr_contains(b,arr));
+}
 export function arr_set_search(haystack,needle){
     // Find the index of a 2d array needle in a 3d array haystack while ignoring the order of the first needle dimension
     for (var i=0;i<haystack.length;i++){

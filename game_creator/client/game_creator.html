@@ -29,17 +29,29 @@
             <button class="btn btn-5 btn-greyed" id="new_wp">New winpattern</button>
             <button class="btn btn-5 btn-greyed" id="del_wp">Delete winpattern</button>
         </div>
+        <div id="add_rows">
+            <div class="row_num">Add rows of <input class="rownumber" type="text" min="2" max="21" value="3">
+                <button class="addbutton">Add</button>
+            </div>
+            <div id="checkboxes">
+                <div class="checkbox"><label>horizontal</label><input type="checkbox" checked="checked"></div>
+                <div class="checkbox"><label>vertical</label><input type="checkbox" checked="checked"></div>
+                <div class="checkbox"><label>diagonal</label><input type="checkbox" checked="checked"></div>
+            </div>
+        </div>
         <div id="show_wp">
             <div id="wp_line_left" class="wp_line">
+            </div><div id="wp_line_middle" class="wp_line">
             </div><div id="wp_line_right" class="wp_line">
             </div>
         </div>
     </aside>
 <script src="js/slider.js"></script>
 <script type="module">
-import { arr_eq, arr_in_arr, arr_set_search } from './js/util.js';
+import { arr_eq, arr_in_arr, arr_set_search, issubset } from './js/util.js';
+const board_size = Math.min(document.body.getBoundingClientRect().height * 0.9, document.body.getBoundingClientRect().width * 0.5);
 const config = {
-    rows:0,cols:0,name:"default",winsquarecombos:{},"squares":0,"blocked_squares":{"default":[]},sq_colors:[],board_height:850,board_width:850
+    rows:0,cols:0,name:"default",winsquarecombos:{},"squares":0,"blocked_squares":{"default":[]},sq_colors:[],board_height:board_size,board_width:board_size
 }
 var tds = [];
 var selected = [];
@@ -50,7 +62,7 @@ document.body.onmousedown = function(event) {
 document.body.onmouseup = function() {
     if (event.button==0){mouseDown=0}
 }
-const colors = ["#ffffff","#ff0000","#0000ff","#00cc00","#003300","#ff00ff","#6600cc","#000000","#ff6600"];
+const colors = ["#0000ff","#ffffff","#ff0000","#00cc00","#003300","#ff00ff","#6600cc","#000000","#ff6600"];
 const table = document.getElementById("board");
 const tbody = document.getElementById("square_holder");
 const col_palette = document.getElementById("color-palette");
@@ -93,7 +105,7 @@ function add_wp(){
         config.winsquarecombos[selected.length].push(selected.slice(0));
         update_buttons();
     }
-    show_wps();
+    remove_stupid_winsquarecombs();
 }
 function del_wp(){
     if (config.winsquarecombos[selected.length]===undefined){
@@ -106,10 +118,17 @@ function del_wp(){
     }
     show_wps();
 }
+function select_sqs(sqs){
+    selected = sqs.slice(0);
+    update_buttons();
+    rerender_selected();
+}
 function show_wps(){
     const left = document.getElementById("wp_line_left")
+    const middle = document.getElementById("wp_line_middle")
     const right = document.getElementById("wp_line_right")
     left.innerHTML="";
+    middle.innerHTML="";
     right.innerHTML="";
     var cur = left;
     for (const [key, value] of Object.entries(config.winsquarecombos)) {
@@ -127,9 +146,10 @@ function show_wps(){
                 });
                 wpp.innerText = text;
                 groupp.appendChild(wpp);
+                wpp.addEventListener("mousedown",()=>select_sqs(wp));
             });
             cur.appendChild(groupp);
-            cur = cur==left?right:left;
+            cur = cur==left?middle:(cur==middle?right:left);
         }
     }
 }
@@ -281,17 +301,30 @@ function display_board(){
 }
 
 function remove_stupid_winsquarecombs(){
-    for (var i = config.winsquarecombos.length-1; i > -1 ; i--){
-        var stupid = false;
-        config.winsquarecombos[i].forEach(sq => {
-            if (sq[0]>config.rows || sq[1]>config.cols || config.sq_colors[sq[0]][sq[1]]=="deleted"){
-                stupid = true;
+    const keys = Object.keys(config.winsquarecombos)
+    keys.sort(function(a,b){return b-a});
+    for (var i = 0; i < keys.length; i++) {
+        const key = keys[i];
+        for (var j = config.winsquarecombos[key].length-1;j>-1;j--){
+            var stupid = config.winsquarecombos[key][j].some(sq => {
+                if (sq[0]>=config.rows || sq[1]>=config.cols || config.sq_colors[sq[0]][sq[1]]=="deleted"){
+                    return true
+                }
+                return false;
+            });
+            for (var k=i+1;k<keys.length;k++){
+                if (config.winsquarecombos[keys[k]].some(wp=>issubset(wp,config.winsquarecombos[key][j]))){
+                    stupid = true
+                    console.log("yes");
+                    break
+                }
             }
-        });
-        if (stupid){
-            config.winsquarecombos.splice(i,1)
+            if (stupid){
+                config.winsquarecombos[key].splice(j,1)
+            }
         }
     }
+    show_wps();
 }
 function change_rows_cols(rows,cols){
     config.rows = rows

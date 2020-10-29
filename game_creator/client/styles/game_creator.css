@@ -6,8 +6,8 @@ body{
 }
 #board{
     position: absolute;
-    left: 800px;
-    top: 50px;
+    left: 45%;
+    top: 5%;
     border-spacing: 0px;
     border-collapse: collapse;
     user-select: none;
@@ -32,7 +32,7 @@ aside{
     position:fixed;
     left:0px;
     top:0px;
-    width:650px;
+    width:40%;
     height:100%;
     overflow-y:scroll;
     background-color: #19222a;
@@ -71,16 +71,50 @@ aside{
     justify-content: center;
     text-align: center;
     font-size:10px;
+    user-select: none;
     font-family: Roboto, 'Helvetica Neue', Arial;
 }
 .wp_line{
     position: relative;
     padding: 10px 10px 10px 10px;
-    width: calc(50% - 23px);
+    width: calc(33% - 22px);
     float:left;
     text-align: center;
 }
 span.header{
     font-size:15px;
     font-weight: bold;
+}
+#add_rows{
+    position: relative;
+    display:flex;
+    flex-direction: column;
+    flex-wrap: wrap;
+    color:white;
+    justify-content:center;
+    text-align:center;
+    font-family: Roboto, 'Helvetica Neue', Arial;
+    width:100%;
+}
+#checkboxes{
+    display:flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content:center;
+    text-align:center;
+}
+.checkbox{
+    text-align: center;
+    display:flex;
+    flex-direction: column;
+    flex-wrap: wrap;
+    margin:0px 10px 0px 10px;
+}
+.rownumber{
+    width:20px;
+    font-size:15px;
+    border:none;
+    height:20px;
+    background-color:#09121a;
+    color:white;
 }
