@@ -1,6 +1,7 @@
 <head>
     <link rel="stylesheet" href="styles/game_creator.css">
     <link rel="stylesheet" href="styles/slider.css">
+    <link rel="stylesheet" href="styles/buttons.css">
     <meta charset="utf-8"/>
 </head>
 <body>
@@ -20,11 +21,28 @@
             <label for="slider" class="slider_label">0</label>
         </div>
         <div id="color-palette"></div>
+        <div id="button-holder">
+            <button class="btn btn-5 btn-active" id="select_all">select all</button>
+            <button class="btn btn-5 btn-greyed" id="select_none">select none</button>
+            <button class="btn btn-5 btn-greyed" id="delete">Delete Squares</button>
+            <button class="btn btn-5 btn-greyed" id="new_wp">New winpattern</button>
+            <button class="btn btn-5 btn-greyed" id="del_wp">Delete winpattern</button>
+        </div>
     </aside>
 <script src="js/slider.js"></script>
-<script>
+<script type="module">
+import { arr_eq, arr_in_arr, arr_set_search } from './js/util.js';
 const config = {
     rows:0,cols:0,name:"default",winsquarecombos:[],"squares":0,"blocked_squares":{"default":[]},sq_colors:[],board_height:850,board_width:850
+}
+var tds = [];
+var selected = [];
+var mouseDown = 0;
+document.body.onmousedown = function(event) { 
+    if (event.button==0){mouseDown=1}
+}
+document.body.onmouseup = function() {
+    if (event.button==0){mouseDown=0}
 }
 const colors = ["#0000ff","#ff0000","#00cc00","#003300","#ff00ff","#6600cc","#ffffff","#000000","#ff6600"];
 const table = document.getElementById("board");
@@ -33,35 +51,199 @@ const col_palette = document.getElementById("color-palette");
 colors.forEach(col => {
     const div = document.createElement("div");
     div.style.backgroundColor = col;
+    div.addEventListener("mousedown",event=>{
+        change_selected_color(event.target.style.backgroundColor);
+    });
     col_palette.appendChild(div);
-})
+});
+function select_all(){
+    console.log(selected);
+    selected = [];
+    for (var y=0;y<config.rows;y++){
+        for (var x=0;x<config.cols;x++){
+            selected.push([y,x]);
+        }
+    }
+    rerender_selected();
+}
+function select_none(){
+    selected = [];
+    rerender_selected();
+}
+function delete_selected(){
+    selected.forEach(sq=>{
+        tds[sq[0]][sq[1]].classList.remove("square");
+        tds[sq[0]][sq[1]].classList.add("deleted");
+        tds[sq[0]][sq[1]].style.backgroundColor=null;
+        config.sq_colors[sq[0]][sq[1]] = "deleted";
+    });
+    remove_stupid_winsquarecombs();
+}
+function add_wp(){
+    if (arr_set_search(config.winsquarecombos,selected)===-1){
+        config.winsquarecombos.push(selected.slice(0));
+        update_buttons();
+    }
+}
+function del_wp(){
+    var ind = arr_set_search(config.winsquarecombos,selected)
+    if (ind!=-1){
+        config.winsquarecombos.splice(ind,1);
+        update_buttons();
+    }
+}
+document.getElementById("select_all").addEventListener("click",select_all);
+document.getElementById("select_none").addEventListener("click",select_none);
+document.getElementById("delete").addEventListener("click",delete_selected);
+document.getElementById("new_wp").addEventListener("click",add_wp);
+document.getElementById("del_wp").addEventListener("click",del_wp);
+function update_buttons(){
+    if (selected.length==0){
+        document.getElementById("select_none").classList.add("btn-greyed");
+        document.getElementById("select_none").classList.remove("btn-active");
+        document.getElementById("delete").classList.add("btn-greyed");
+        document.getElementById("delete").classList.remove("btn-active");
+        document.getElementById("new_wp").classList.add("btn-greyed");
+        document.getElementById("new_wp").classList.remove("btn-active");
+        document.getElementById("del_wp").classList.add("btn-greyed");
+        document.getElementById("del_wp").classList.remove("btn-active");
+    }
+    else{
+        document.getElementById("select_none").classList.remove("btn-greyed");
+        document.getElementById("select_none").classList.add("btn-active");
+        document.getElementById("delete").classList.remove("btn-greyed");
+        document.getElementById("delete").classList.add("btn-active");
+        if (arr_set_search(config.winsquarecombos,selected)===-1){
+            var cantadd = false;
+            selected.forEach(sq => {
+                if (config.sq_colors[sq[0]][sq[1]]=="deleted"){
+                    cantadd = true;
+                }
+            });
+            if (cantadd){
+                document.getElementById("new_wp").classList.add("btn-greyed");
+                document.getElementById("new_wp").classList.remove("btn-active");
+            }
+            else{
+                document.getElementById("new_wp").classList.remove("btn-greyed");
+                document.getElementById("new_wp").classList.add("btn-active");
+            }
+            document.getElementById("del_wp").classList.add("btn-greyed");
+            document.getElementById("del_wp").classList.remove("btn-active");
+        }
+        else{
+            document.getElementById("new_wp").classList.add("btn-greyed");
+            document.getElementById("new_wp").classList.remove("btn-active");
+            document.getElementById("del_wp").classList.remove("btn-greyed");
+            document.getElementById("del_wp").classList.add("btn-active");
+        }
+    }
+    if (selected.length==config.cols*config.rows){
+        document.getElementById("select_all").classList.add("btn-greyed");
+        document.getElementById("select_all").classList.remove("btn-active");
+    }
+    else{
+        document.getElementById("select_all").classList.remove("btn-greyed");
+        document.getElementById("select_all").classList.add("btn-active");
+    }
+}
+function change_selected_color(color){
+    selected.forEach(sq=>{
+        config.sq_colors[sq[0]][sq[1]] = color;
+        tds[sq[0]][sq[1]].style.backgroundColor=color;
+        tds[sq[0]][sq[1]].classList.remove("deleted");
+        tds[sq[0]][sq[1]].classList.add("square");
+    });
+}
+function select_square(el){
+    const row = Number(el.getAttribute("data-row"));
+    const col = Number(el.getAttribute("data-column"));
+    selected.push([row,col]);
+    el.classList.add("selected");
+    update_buttons();
+}
+function unselect_square(el){
+    const row = Number(el.getAttribute("data-row"));
+    const col = Number(el.getAttribute("data-column"));
+    for (var i=0;i<selected.length;i++){
+        if (selected[i][0]==row && selected[i][1]==col){
+            selected.splice(i,1);
+            break
+        }
+    }
+    el.classList.remove("selected");
+    update_buttons();
+}
+function rerender_selected(){
+    tds.forEach(row=>{
+        row.forEach(td=>{
+            td.classList.remove("selected");
+        })
+    });
+    for (var i=selected.length-1;i>-1;i--){
+        var sq = selected[i];
+        if (tds[sq[0]]===undefined||tds[sq[0]][sq[1]]===undefined){
+            selected.splice(i,1);
+        }
+        else{
+            tds[sq[0]][sq[1]].classList.add("selected");
+        }
+    }
+    update_buttons();
+}
+function select_or_unselect(event){
+    const el = event.target;
+    const row = Number(el.getAttribute("data-row"));
+    const col = Number(el.getAttribute("data-column"));
+    if (arr_in_arr(selected,[row,col])){
+        unselect_square(el);
+    }
+    else{
+        select_square(el);
+    }
+}
 function display_board(){
     const rect = table.getBoundingClientRect()
     const sq_size = Math.min(config.board_width/config.cols,config.board_height/config.rows)
     tbody.innerHTML = ""
-    config.sq_colors.forEach(sq_row => {
+    tds = []
+    for (var i=0;i<config.sq_colors.length;i++){
+        var sq_row = config.sq_colors[i]
         const tr = document.createElement("tr");
-        sq_row.forEach(sq_col => {
+        var list_of_tds = []
+        for (var j=0;j<sq_row.length;j++){
+            var sq_col = sq_row[j]
             const td = document.createElement("td");
             td.style.width = td.style.height = sq_size+"px";
+            td.setAttribute("data-row",i);
+            td.setAttribute("data-column",j);
             if (sq_col=="deleted"){
-                td.className = "deleted"
+                td.className = "deleted";
             }
             else{
                 td.style.backgroundColor = sq_col;
-                td.className = "square"
+                td.className = "square";
             }
+            td.addEventListener("mousedown",select_or_unselect);
+            td.addEventListener("mouseenter",event=>{
+                if (mouseDown){
+                    select_or_unselect(event)
+                }
+            });
+            list_of_tds.push(td);
             tr.appendChild(td);
-        })
-        tbody.appendChild(tr)
-    });
+        }
+        tds.push(list_of_tds);
+        tbody.appendChild(tr);
+    }
+    rerender_selected();
 }
 
 function remove_stupid_winsquarecombs(){
     for (var i = config.winsquarecombos.length-1; i > -1 ; i--){
-        stupid = false;
+        var stupid = false;
         config.winsquarecombos[i].forEach(sq => {
-            if (sq[0]>config.rows || sq[1]>config.cols || sq_colors[sq[0]][sq[1]]=="deleted"){
+            if (sq[0]>config.rows || sq[1]>config.cols || config.sq_colors[sq[0]][sq[1]]=="deleted"){
                 stupid = true;
             }
         });

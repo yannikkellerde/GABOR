@@ -1,7 +1,6 @@
 const inputs = document.querySelectorAll(".slider_input");
 const labels = document.querySelectorAll(".slider_label");
 
-console.log(inputs)
 for (var i=0;i<inputs.length;i++){
     const input = inputs[i];
     const label = labels[i];
