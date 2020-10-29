@@ -29,15 +29,18 @@
             <button class="btn btn-5 btn-greyed" id="new_wp">New winpattern</button>
             <button class="btn btn-5 btn-greyed" id="del_wp">Delete winpattern</button>
         </div>
-        <div id="add_rows">
-            <div class="row_num">Add rows of <input class="rownumber" type="text" min="2" max="21" value="3">
-                <button class="addbutton">Add</button>
+        <div id="special_patterns">
+            <div id="add_rows">
+                <div class="row_num">Add rows of <input id="rownumber" type="text" min="2" max="21" value="3">
+                    <button id="add_patterns" class="addbutton">Add</button>
+                </div>
+                <div id="checkboxes">
+                    <div class="checkbox"><label>horizontal</label><input id="check_hori" type="checkbox" checked="checked"></div>
+                    <div class="checkbox"><label>vertical</label><input id="check_verti" type="checkbox" checked="checked"></div>
+                    <div class="checkbox"><label>diagonal</label><input id="check_diag" type="checkbox" checked="checked"></div>
+                </div>
             </div>
-            <div id="checkboxes">
-                <div class="checkbox"><label>horizontal</label><input type="checkbox" checked="checked"></div>
-                <div class="checkbox"><label>vertical</label><input type="checkbox" checked="checked"></div>
-                <div class="checkbox"><label>diagonal</label><input type="checkbox" checked="checked"></div>
-            </div>
+            <button class="addbutton" id="add_squares">Add 2x2 Squares</button>
         </div>
         <div id="show_wp">
             <div id="wp_line_left" class="wp_line">
@@ -48,11 +51,13 @@
     </aside>
 <script src="js/slider.js"></script>
 <script type="module">
-import { arr_eq, arr_in_arr, arr_set_search, issubset } from './js/util.js';
+import { arr_eq, arr_in_arr, arr_set_search, issubset, filter_dups} from './js/util.js';
+import {find_rows, find_columns, find_first_diagonals, find_second_diagonals, find_squares} from './js/find_patterns.js'
 const board_size = Math.min(document.body.getBoundingClientRect().height * 0.9, document.body.getBoundingClientRect().width * 0.5);
 const config = {
     rows:0,cols:0,name:"default",winsquarecombos:{},"squares":0,"blocked_squares":{"default":[]},sq_colors:[],board_height:board_size,board_width:board_size
 }
+var selected_wp = null;
 var tds = [];
 var selected = [];
 var mouseDown = 0;
@@ -74,6 +79,29 @@ colors.forEach(col => {
     });
     col_palette.appendChild(div);
 });
+function add_row_patterns(){
+    const pat_len = Number(document.getElementById("rownumber").value);
+    if (pat_len<2 || pat_len>21){
+        return;
+    }
+    var wps = [];
+    if (document.getElementById("check_hori").checked){
+        wps.push(...find_rows(pat_len,config.rows,config.cols,config.sq_colors));
+    }
+    if (document.getElementById("check_verti").checked){
+        wps.push(...find_columns(pat_len,config.rows,config.cols,config.sq_colors));
+    }
+    if (document.getElementById("check_diag").checked){
+        wps.push(...find_first_diagonals(pat_len,config.rows,config.cols,config.sq_colors));
+        wps.push(...find_second_diagonals(pat_len,config.rows,config.cols,config.sq_colors));
+    }
+    if (config.winsquarecombos[pat_len]===undefined){
+        config.winsquarecombos[pat_len] = [];
+    }
+    config.winsquarecombos[pat_len].push(...wps);
+    remove_stupid_winsquarecombs();
+    update_buttons();
+}
 function select_all(){
     console.log(selected);
     selected = [];
@@ -103,9 +131,9 @@ function add_wp(){
     }
     if (arr_set_search(config.winsquarecombos[selected.length],selected)===-1){
         config.winsquarecombos[selected.length].push(selected.slice(0));
+        remove_stupid_winsquarecombs();
         update_buttons();
     }
-    remove_stupid_winsquarecombs();
 }
 function del_wp(){
     if (config.winsquarecombos[selected.length]===undefined){
@@ -120,8 +148,8 @@ function del_wp(){
 }
 function select_sqs(sqs){
     selected = sqs.slice(0);
-    update_buttons();
     rerender_selected();
+    update_buttons();
 }
 function show_wps(){
     const left = document.getElementById("wp_line_left")
@@ -138,8 +166,9 @@ function show_wps(){
             headspan.className = "header";
             headspan.innerText = `${key} Squares`;
             groupp.appendChild(headspan);
-            value.forEach(wp=>{
+            value.forEach((wp,index)=>{
                 const wpp = document.createElement("p");
+                wpp.id = "winpat_"+key+"_"+index;
                 var text = "";
                 wp.forEach(sq=>{
                     text = text+`(${sq[1]},${sq[0]}),`
@@ -153,11 +182,23 @@ function show_wps(){
         }
     }
 }
+function add_squares(){
+    if (config.winsquarecombos[4]===undefined){
+        config.winsquarecombos[4] = [];
+    }
+    config.winsquarecombos[4].push(...find_squares(config.rows,config.cols,config.sq_colors));
+    remove_stupid_winsquarecombs();
+    update_buttons();
+}
+
 document.getElementById("select_all").addEventListener("click",select_all);
 document.getElementById("select_none").addEventListener("click",select_none);
 document.getElementById("delete").addEventListener("click",delete_selected);
 document.getElementById("new_wp").addEventListener("click",add_wp);
 document.getElementById("del_wp").addEventListener("click",del_wp);
+document.getElementById("add_patterns").addEventListener("click",add_row_patterns);
+document.getElementById("add_squares").addEventListener("click",add_squares);
+
 function update_buttons(){
     if (selected.length==0){
         document.getElementById("select_none").classList.add("btn-greyed");
@@ -174,7 +215,15 @@ function update_buttons(){
         document.getElementById("select_none").classList.add("btn-active");
         document.getElementById("delete").classList.remove("btn-greyed");
         document.getElementById("delete").classList.add("btn-active");
-        if (config.winsquarecombos[selected.length]===undefined || arr_set_search(config.winsquarecombos[selected.length],selected)===-1){
+        var val = config.winsquarecombos[selected.length]===undefined;
+        var index = null;
+        if (!val){
+            index = arr_set_search(config.winsquarecombos[selected.length],selected);
+            if (index==-1){
+                val=true;
+            }
+        }
+        if (val){
             var cantadd = false;
             selected.forEach(sq => {
                 if (config.sq_colors[sq[0]][sq[1]]=="deleted"){
@@ -193,6 +242,8 @@ function update_buttons(){
             document.getElementById("del_wp").classList.remove("btn-active");
         }
         else{
+            document.getElementById("winpat_"+selected.length+"_"+index).classList.add("winpat_selected");
+            selected_wp = [selected.length,index];
             document.getElementById("new_wp").classList.add("btn-greyed");
             document.getElementById("new_wp").classList.remove("btn-active");
             document.getElementById("del_wp").classList.remove("btn-greyed");
@@ -235,7 +286,14 @@ function unselect_square(el){
     el.classList.remove("selected");
     update_buttons();
 }
+function deactivate_wp_select(){
+    if (selected_wp!=null){
+        document.getElementById("winpat_"+selected_wp[0]+"_"+selected_wp[1]).classList.remove("winpat_selected");
+        selected_wp = null;
+    }
+}
 function rerender_selected(){
+    deactivate_wp_select();
     tds.forEach(row=>{
         row.forEach(td=>{
             td.classList.remove("selected");
@@ -253,6 +311,7 @@ function rerender_selected(){
     update_buttons();
 }
 function select_or_unselect(event){
+    deactivate_wp_select();
     const el = event.target;
     const row = Number(el.getAttribute("data-row"));
     const col = Number(el.getAttribute("data-column"));
@@ -305,6 +364,7 @@ function remove_stupid_winsquarecombs(){
     keys.sort(function(a,b){return b-a});
     for (var i = 0; i < keys.length; i++) {
         const key = keys[i];
+        filter_dups(config.winsquarecombos[key]);
         for (var j = config.winsquarecombos[key].length-1;j>-1;j--){
             var stupid = config.winsquarecombos[key][j].some(sq => {
                 if (sq[0]>=config.rows || sq[1]>=config.cols || config.sq_colors[sq[0]][sq[1]]=="deleted"){

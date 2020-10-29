@@ -1,8 +1,10 @@
 export function arr_eq(a, b) {
+    // Check if two array are equal
     return a.length === b.length &&
       a.every((val, index) => val === b[index]);
 }
 export function arr_in_arr(haystack,needle) {
+    // Check if an array is in a list of arrays
     var found = false;
     haystack.forEach(el => {
         if (arr_eq(el,needle)){
@@ -34,4 +36,16 @@ export function arr_set_search(haystack,needle){
         }
     }
     return -1
+}
+export function filter_dups(arr){
+    // Remove duplicates of an array of arrays
+    var known = [];
+    for (var i=arr.length-1;i>-1;i--){
+        if (arr_set_search(known,arr[i])!=-1){
+            arr.splice(i,1);
+        }
+        else{
+            known.push(arr[i]);
+        }
+    }
 }

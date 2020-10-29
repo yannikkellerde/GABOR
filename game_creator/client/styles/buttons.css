@@ -1,4 +1,6 @@
 .btn {
+    max-width: max-content;
+    max-height: max-content;
     color: #fff;
     background-color: transparent;
     cursor: pointer;

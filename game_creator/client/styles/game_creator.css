@@ -19,7 +19,7 @@ body{
 #board td.square{
     border:1px solid black;
 }
-#board td.selected{
+#board td.selected, .winpat_selected{
     border:2px solid #ffff00;
     box-shadow: 0 0 10px #ffff00;
     z-index:2;
@@ -30,10 +30,17 @@ body{
 }
 aside{
     position:fixed;
+    display:flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    color:white;
+    justify-content:center;
+    text-align: center;
     left:0px;
     top:0px;
     width:40%;
     height:100%;
+    min-height: min-content;
     overflow-y:scroll;
     background-color: #19222a;
 }
@@ -56,7 +63,7 @@ aside{
     display: inline-block;
     justify-content: center;
     text-align: center;
-    padding:20px 10px 20px 10px;
+    padding:20px 10px 0px 10px;
     margin:10px 10px 10px 10px;
 }
 #show_wp{
@@ -94,7 +101,16 @@ span.header{
     justify-content:center;
     text-align:center;
     font-family: Roboto, 'Helvetica Neue', Arial;
-    width:100%;
+    max-width: max-content;
+}
+#special_patterns{
+    position: relative;
+    display:flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
 }
 #checkboxes{
     display:flex;
@@ -102,6 +118,7 @@ span.header{
     flex-wrap: nowrap;
     justify-content:center;
     text-align:center;
+    margin: 10px 0px 10px 0px;
 }
 .checkbox{
     text-align: center;
@@ -110,11 +127,36 @@ span.header{
     flex-wrap: wrap;
     margin:0px 10px 0px 10px;
 }
-.rownumber{
+#rownumber{
     width:20px;
     font-size:15px;
     border:none;
     height:20px;
     background-color:#09121a;
     color:white;
+}
+.addbutton {
+	box-shadow:inset 0px 0px 15px 3px #23395e;
+	background:linear-gradient(to bottom, #2e466e 5%, #415989 100%);
+	background-color:#2e466e;
+	border:1px solid #1f2f47;
+	display:inline-block;
+	cursor:pointer;
+	color:#ffffff;
+	font-family:Arial;
+	font-size:15px;
+	padding:4px 8px;
+	text-decoration:none;
+	text-shadow:0px 1px 0px #263666;
+}
+.addbutton:hover {
+	background:linear-gradient(to bottom, #415989 5%, #2e466e 100%);
+	background-color:#415989;
+}
+.addbutton:active {
+	position:relative;
+	top:1px;
+}
+#add_squares{
+    margin-left:40px;
 }
