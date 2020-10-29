@@ -1,4 +1,5 @@
 <head>
+    <title>Game creator</title>
     <link rel="stylesheet" href="styles/game_creator.css">
     <link rel="stylesheet" href="styles/slider.css">
     <link rel="stylesheet" href="styles/buttons.css">
@@ -28,12 +29,17 @@
             <button class="btn btn-5 btn-greyed" id="new_wp">New winpattern</button>
             <button class="btn btn-5 btn-greyed" id="del_wp">Delete winpattern</button>
         </div>
+        <div id="show_wp">
+            <div id="wp_line_left" class="wp_line">
+            </div><div id="wp_line_right" class="wp_line">
+            </div>
+        </div>
     </aside>
 <script src="js/slider.js"></script>
 <script type="module">
 import { arr_eq, arr_in_arr, arr_set_search } from './js/util.js';
 const config = {
-    rows:0,cols:0,name:"default",winsquarecombos:[],"squares":0,"blocked_squares":{"default":[]},sq_colors:[],board_height:850,board_width:850
+    rows:0,cols:0,name:"default",winsquarecombos:{},"squares":0,"blocked_squares":{"default":[]},sq_colors:[],board_height:850,board_width:850
 }
 var tds = [];
 var selected = [];
@@ -44,7 +50,7 @@ document.body.onmousedown = function(event) {
 document.body.onmouseup = function() {
     if (event.button==0){mouseDown=0}
 }
-const colors = ["#0000ff","#ff0000","#00cc00","#003300","#ff00ff","#6600cc","#ffffff","#000000","#ff6600"];
+const colors = ["#ffffff","#ff0000","#0000ff","#00cc00","#003300","#ff00ff","#6600cc","#000000","#ff6600"];
 const table = document.getElementById("board");
 const tbody = document.getElementById("square_holder");
 const col_palette = document.getElementById("color-palette");
@@ -80,16 +86,51 @@ function delete_selected(){
     remove_stupid_winsquarecombs();
 }
 function add_wp(){
-    if (arr_set_search(config.winsquarecombos,selected)===-1){
-        config.winsquarecombos.push(selected.slice(0));
+    if (config.winsquarecombos[selected.length]===undefined){
+        config.winsquarecombos[selected.length] = [];
+    }
+    if (arr_set_search(config.winsquarecombos[selected.length],selected)===-1){
+        config.winsquarecombos[selected.length].push(selected.slice(0));
         update_buttons();
     }
+    show_wps();
 }
 function del_wp(){
-    var ind = arr_set_search(config.winsquarecombos,selected)
+    if (config.winsquarecombos[selected.length]===undefined){
+        return
+    }
+    var ind = arr_set_search(config.winsquarecombos[selected.length],selected)
     if (ind!=-1){
-        config.winsquarecombos.splice(ind,1);
+        config.winsquarecombos[selected.length].splice(ind,1);
         update_buttons();
+    }
+    show_wps();
+}
+function show_wps(){
+    const left = document.getElementById("wp_line_left")
+    const right = document.getElementById("wp_line_right")
+    left.innerHTML="";
+    right.innerHTML="";
+    var cur = left;
+    for (const [key, value] of Object.entries(config.winsquarecombos)) {
+        if (value.length!=0){
+            const groupp = document.createElement("p");
+            const headspan = document.createElement("span");
+            headspan.className = "header";
+            headspan.innerText = `${key} Squares`;
+            groupp.appendChild(headspan);
+            value.forEach(wp=>{
+                const wpp = document.createElement("p");
+                var text = "";
+                wp.forEach(sq=>{
+                    text = text+`(${sq[1]},${sq[0]}),`
+                });
+                wpp.innerText = text;
+                groupp.appendChild(wpp);
+            });
+            cur.appendChild(groupp);
+            cur = cur==left?right:left;
+        }
     }
 }
 document.getElementById("select_all").addEventListener("click",select_all);
@@ -113,7 +154,7 @@ function update_buttons(){
         document.getElementById("select_none").classList.add("btn-active");
         document.getElementById("delete").classList.remove("btn-greyed");
         document.getElementById("delete").classList.add("btn-active");
-        if (arr_set_search(config.winsquarecombos,selected)===-1){
+        if (config.winsquarecombos[selected.length]===undefined || arr_set_search(config.winsquarecombos[selected.length],selected)===-1){
             var cantadd = false;
             selected.forEach(sq => {
                 if (config.sq_colors[sq[0]][sq[1]]=="deleted"){

@@ -59,3 +59,28 @@ aside{
     padding:20px 10px 20px 10px;
     margin:10px 10px 10px 10px;
 }
+#show_wp{
+    background-color:#09121a;
+    color:white;
+    position: relative;
+    margin: 20px 20px 20px 20px;
+    width: calc(100% - 40px);
+    min-height: 100px;
+    max-height: 300px;
+    overflow-y: scroll;
+    justify-content: center;
+    text-align: center;
+    font-size:10px;
+    font-family: Roboto, 'Helvetica Neue', Arial;
+}
+.wp_line{
+    position: relative;
+    padding: 10px 10px 10px 10px;
+    width: calc(50% - 23px);
+    float:left;
+    text-align: center;
+}
+span.header{
+    font-size:15px;
+    font-weight: bold;
+}
