@@ -165,9 +165,9 @@ class Graph_game():
                         elif deg == 2:
                             nod1,nod2 = vert.all_neighbors()
                             ind1,ind2 = int(nod1),int(nod2)
-                            if ind1 in vert_inds:
+                            if ind1 in vert_inds and ind2!=vert_inds[ind1]:
                                 double_threat[ind1]=(ind2,vert_inds[ind1])
-                            if ind2 in vert_inds:
+                            if ind2 in vert_inds and ind1!=vert_inds[ind2]:
                                 double_threat[ind2] = (ind1,vert_inds[ind2])
                             vert_inds[ind1] = ind2
                             vert_inds[ind2] = ind1
@@ -230,9 +230,9 @@ class Graph_game():
                         done = True
                     elif len(frees) == 2:
                         ind1,ind2 = frees
-                        if ind1 in vert_inds:
+                        if ind1 in vert_inds and ind2!=vert_inds[ind1]:
                             double_threat[ind1]=(ind2,vert_inds[ind1])
-                        if ind2 in vert_inds:
+                        if ind2 in vert_inds and ind1!=vert_inds[ind2]:
                             double_threat[ind2]=(ind1,vert_inds[ind2])
                         vert_inds[ind1] = ind2
                         vert_inds[ind2] = ind1
@@ -299,9 +299,9 @@ class Graph_game():
                     elif deg == 2:
                         nod1,nod2 = vert.all_neighbors()
                         ind1,ind2 = int(nod1),int(nod2)
-                        if ind1 in vert_inds:
+                        if ind1 in vert_inds and ind2!=vert_inds[ind1]:
                             double_threat[ind1]=(ind2,vert_inds[ind1])
-                        if ind2 in vert_inds:
+                        if ind2 in vert_inds and ind1!=vert_inds[ind2]:
                             double_threat[ind2] = (ind1,vert_inds[ind2])
                         vert_inds[ind1] = ind2
                         vert_inds[ind2] = ind1

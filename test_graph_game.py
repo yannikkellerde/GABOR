@@ -130,10 +130,10 @@ def test_pos_from_graph():
     #game.board.draw_me(reco_pos)
 
 def display_wsn():
-    game = Qango7x7_plus()
+    game = Qango6x6()
     count = 0
     for wsn in game.board.winsquarenums:
-        if len(wsn)!=5:
+        if len(wsn)!=3:
             continue
         count+=1
         game.board.position = ["f"]*game.board.squares
@@ -145,14 +145,14 @@ def display_wsn():
 def test_ai_api():
     ai = Ai_api({"qango6x6":[0,1,2,3],"qango7x7_plus":[2]})
     pos = list( "ffffff"
+                "fffbff"
+                "ffffwb"
                 "ffffff"
                 "ffffff"
-                "ffffff"
-                "ffffff"
-                "fffffff")
+                "ffffff")
 
-    onturn = "b"
-    print(ai.get_move("qango7x7_plus",2,onturn,pos))
+    onturn = "w"
+    print(ai.get_move("qango6x6",3,onturn,pos))
 
 if __name__ == "__main__":
     #test_moving()

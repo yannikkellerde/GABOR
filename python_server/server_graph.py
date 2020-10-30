@@ -102,13 +102,21 @@ if __name__ == "__main__":
     else:
         raise ValueError(f"Game not found {my_folder}")
     try:
-        game.board.load_sets(provenfile_black=f"../proofsets/full_game/b_{my_folder}_p.pkl",
-                            disprovenfile_black=f"../proofsets/full_game/b_{my_folder}_d.pkl")
+        if len(sys.argv)>=3:
+            game.board.load_sets(provenfile_black=f"../proofsets/b_{my_folder}_{sys.argv[2]}p.pkl",
+                                 disprovenfile_black=f"../proofsets/b_{my_folder}_{sys.argv[2]}d.pkl")
+        else:
+            game.board.load_sets(provenfile_black=f"../proofsets/full_game/b_{my_folder}_p.pkl",
+                                 disprovenfile_black=f"../proofsets/full_game/b_{my_folder}_d.pkl")
     except FileNotFoundError as e:
         print(e)
     try:
-        game.board.load_sets(provenfile_white=f"../proofsets/full_game/w_{my_folder}_p.pkl",
-                            disprovenfile_white=f"../proofsets/full_game/w_{my_folder}_d.pkl")
+        if len(sys.argv)>=3:
+            game.board.load_sets(provenfile_white=f"../proofsets/w_{my_folder}_{sys.argv[2]}p.pkl",
+                                 disprovenfile_white=f"../proofsets/w_{my_folder}_{sys.argv[2]}d.pkl")
+        else:
+            game.board.load_sets(provenfile_white=f"../proofsets/full_game/w_{my_folder}_p.pkl",
+                                 disprovenfile_white=f"../proofsets/full_game/w_{my_folder}_d.pkl")
     except FileNotFoundError as e:
         print(e)
     endgame_depth = 0

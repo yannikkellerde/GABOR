@@ -7,6 +7,7 @@ from selenium.common.exceptions import NoSuchElementException,StaleElementRefere
 from selenium.webdriver.support.ui import Select
 import traceback
 import json
+import pickle
 sys.path.append("..")
 import time
 
@@ -16,6 +17,8 @@ class Page_handler():
         self.logfolder = "logs"
         self.time_multiplier = 2
         self.lais = 10
+        self.player_ratings = None
+        self.my_rating = 0
         os.makedirs(self.logfolder,exist_ok=True)
         with open("secrets.json","r") as f:
             self.secrets = json.load(f)
@@ -182,6 +185,133 @@ class Page_handler():
                 num_games += 1
         return num_games
 
+    def get_player_rating(self):
+        self.player_ratings = []
+        self.driver.get("https://www.yucata.de/en/Ranking/Game/QANGO")
+        for _ in range(200):
+            for _ in range(self.lais):
+                try:
+                    table = self.driver.find_element_by_id("rankingTable").find_element_by_tag_name("tbody")
+                    break
+                except Exception as e:
+                    print(traceback.format_exc())
+                time.sleep(1*self.time_multiplier)
+            else:
+                self.player_ratings = None
+                return
+            rows = table.find_elements_by_tag_name("tr")
+            for row in rows:
+                entries = row.find_elements_by_tag_name("td")
+                name = entries[2].find_element_by_tag_name("span").get_attribute("innerText")
+                rating = float(entries[-1].get_attribute("innerText"))
+                if name==self.secrets["login"]:
+                    self.my_rating = rating
+                else:
+                    self.player_ratings.append((rating, name))
+            button = self.driver.find_element_by_id("rankingTable_next")
+            if "disabled" in button.get_attribute("class"):
+                break
+            button.click()
+            time.sleep(0.05*self.time_multiplier)
+        with open("player_ratings.pkl", "wb") as f:
+            pickle.dump(self.player_ratings,f)
+        with open("my_rating.pkl","wb") as f:
+            pickle.dump(self.my_rating,f)
+        
+
+    def find_already_bothered(self):
+        self.driver.get("https://www.yucata.de/en/InvitationList#sent")
+        already_bothered = set()
+        for _ in range(self.lais):
+            time.sleep(1*self.time_multiplier)
+            try:
+                table = self.driver.find_element_by_id("SentInvitationsTable").find_element_by_tag_name("tbody")
+                break
+            except Exception as e:
+                print(traceback.format_exc())
+        else:
+            return None
+        rows = table.find_elements_by_tag_name("tr")
+        for row in rows:
+            entries = row.find_elements_by_tag_name("td")
+            if len(entries)<2:
+                break
+            name = entries[-1].find_element_by_tag_name("em").find_element_by_tag_name("span").find_element_by_tag_name("span").find_element_by_tag_name("span").get_attribute("innerText")
+            name = name.split(" ")[-1]
+            already_bothered.add(name)
+        self.driver.get("https://www.yucata.de/en/Messages#system")
+        time.sleep(2*self.time_multiplier)
+        messages = self.driver.find_element_by_id("system_content").find_element_by_tag_name("div").find_elements_by_xpath("*")
+        print(len(messages))
+        for message in messages:
+            try:
+                mbody = message.find_element_by_tag_name("div")
+            except NoSuchElementException as e:
+                print(traceback.format_exc())
+                time.sleep(1*self.time_multiplier)
+                continue
+            name = mbody.get_attribute("innerText").split(" ")[0]
+            already_bothered.add(name)
+        self.driver.get("https://www.yucata.de/en/Overview")
+        for _ in range(self.lais):
+            time.sleep(1*self.time_multiplier)
+            try:
+                select = Select(self.driver.find_element_by_id("ddlCurrentGamesFilter"))
+                select.select_by_value('2')
+                break
+            except Exception as e:
+                print(traceback.format_exc())
+        time.sleep(2*self.time_multiplier)
+        table = self.driver.find_element_by_id("LiveGamesTable").find_element_by_tag_name("tbody")
+        rows = table.find_elements_by_tag_name("tr")
+        for row in rows:
+            entries = row.find_elements_by_tag_name("td")
+            if len(entries)<2:
+                break
+            try:
+                name = entries[2].find_elements_by_tag_name("span")[0].find_element_by_tag_name("span").find_element_by_tag_name("span").get_attribute("innerText")
+            except NoSuchElementException as e:
+                name = entries[2].find_elements_by_tag_name("span")[1].find_element_by_tag_name("span").find_element_by_tag_name("span").get_attribute("innerText")
+            name = name.split(" ")[-1]
+            already_bothered.add(name)
+        return already_bothered
+
+    def create_new_invitation(self):
+        if self.player_ratings is None:
+            if os.path.isfile("player_ratings.pkl") and os.path.isfile("my_rating.pkl") and random.random()<1:
+                with open("player_ratings.pkl","rb") as f:
+                    self.player_ratings = pickle.load(f)
+                with open("my_rating.pkl","rb") as f:
+                    self.my_rating = pickle.load(f)
+            else:
+                self.get_player_rating()
+        already_bothered = self.find_already_bothered()
+        valid_players = list(filter(lambda x:x[1] not in already_bothered,self.player_ratings))
+        better_than_me = list(filter(lambda x:x[0]>self.my_rating,valid_players))
+        if len(better_than_me)==0:
+            to_invite = valid_players[0][1]
+        else:
+            to_invite = random.choice(better_than_me)[1]
+        self.driver.get("https://www.yucata.de/de/Invite/QANGO?numplayers=0")
+        for _ in range(self.lais):
+            time.sleep(1*self.time_multiplier)
+            try:
+                time.sleep(0.2*self.time_multiplier)
+                self.driver.find_element_by_id("radioPersonal").click()
+                self.driver.find_element_by_id("edtPlayerName").send_keys(to_invite)
+                break
+            except Exception as e:
+                print(traceback.format_exc())
+        else:
+            return None
+        self.driver.find_element_by_id("ctl00_cphRightCol_ctl00_ctl00_InvitationHeader1_cbRanking").click()
+        self.driver.find_element_by_id("ctl00_cphRightCol_ctl00_ctl00_ModeQANGO6Tournament").click()
+        self.driver.find_element_by_id("btnCreateInvitation").click()
+        time.sleep(1*self.time_multiplier)
+        self.driver.find_element_by_id("ctl00_cphRightCol_ctl00_ctl00_ModeQANGO7PlusTournament").click()
+        self.driver.find_element_by_id("btnCreateInvitation").click()
+        time.sleep(0.2*self.time_multiplier)
+
     def send_new_invitation(self):
         self.driver.get("https://www.yucata.de/de/Invite/QANGO?numplayers=0")
         for _ in range(self.lais):
@@ -235,22 +365,11 @@ class Page_handler():
                 return False
             time.sleep(1*self.time_multiplier)
         try:
-            inv_count = self.check_invitation_count()
+            self.create_new_invitation()
         except Exception as e:
             print(traceback.format_exc())
             self.driver.quit()
             return False
-        print(inv_count)
-        if inv_count is None:
-            return False
-        time.sleep(1*self.time_multiplier)
-        if inv_count < 2:
-            try:
-                self.send_new_invitation()
-            except Exception as e:
-                print(traceback.format_exc())
-                self.driver.quit()
-                return False
         self.driver.quit()
 
     def wait(self,seconds):
