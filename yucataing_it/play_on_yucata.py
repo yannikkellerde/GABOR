@@ -203,6 +203,7 @@ class Page_handler():
             for row in rows:
                 entries = row.find_elements_by_tag_name("td")
                 name = entries[2].find_element_by_tag_name("span").get_attribute("innerText")
+                name = name.split(" ")[-1]
                 rating = float(entries[-1].get_attribute("innerText"))
                 if name==self.secrets["login"]:
                     self.my_rating = rating
@@ -277,14 +278,8 @@ class Page_handler():
         return already_bothered
 
     def create_new_invitation(self):
-        if self.player_ratings is None:
-            if os.path.isfile("player_ratings.pkl") and os.path.isfile("my_rating.pkl") and random.random()<1:
-                with open("player_ratings.pkl","rb") as f:
-                    self.player_ratings = pickle.load(f)
-                with open("my_rating.pkl","rb") as f:
-                    self.my_rating = pickle.load(f)
-            else:
-                self.get_player_rating()
+        if self.player_ratings is None or random.random()<0.1:
+            self.get_player_rating()
         already_bothered = self.find_already_bothered()
         valid_players = list(filter(lambda x:x[1] not in already_bothered,self.player_ratings))
         better_than_me = list(filter(lambda x:x[0]>self.my_rating,valid_players))
@@ -304,13 +299,13 @@ class Page_handler():
                 print(traceback.format_exc())
         else:
             return None
-        self.driver.find_element_by_id("ctl00_cphRightCol_ctl00_ctl00_InvitationHeader1_cbRanking").click()
         self.driver.find_element_by_id("ctl00_cphRightCol_ctl00_ctl00_ModeQANGO6Tournament").click()
+        self.driver.find_element_by_id("ctl00_cphRightCol_ctl00_ctl00_InvitationHeader1_cbRanking").click()
         self.driver.find_element_by_id("btnCreateInvitation").click()
         time.sleep(1*self.time_multiplier)
         self.driver.find_element_by_id("ctl00_cphRightCol_ctl00_ctl00_ModeQANGO7PlusTournament").click()
         self.driver.find_element_by_id("btnCreateInvitation").click()
-        time.sleep(0.2*self.time_multiplier)
+        time.sleep(2*self.time_multiplier)
 
     def send_new_invitation(self):
         self.driver.get("https://www.yucata.de/de/Invite/QANGO?numplayers=0")
