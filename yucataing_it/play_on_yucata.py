@@ -93,7 +93,10 @@ class Page_handler():
             except StaleElementReferenceException:
                 print(traceback.format_exc())
         else:
-            return False
+            try:
+                self.other_move_make_try()
+            except Exception as e:
+                return False
         w_count = position.count("w") + (0.5 if onturn=="w" else 0)
         b_count = position.count("b") + (0.5 if onturn=="b" else 0)
         if w_count>b_count:
@@ -112,17 +115,20 @@ class Page_handler():
             self.driver.find_element_by_id("btn_finishTurn").click()
         except (ElementNotInteractableException,ElementClickInterceptedException) as e:
             print(e)
-            try:
-                self.driver.find_element_by_id("btn_nextGame").click()
-            except Exception as e:
-                print(e)
-                self.driver.find_element_by_id("btn_extend+").click()
-                time.sleep(0.5)
-                self.driver.find_element_by_id("btn_acceptTie").click()
+            self.other_move_make_try()
         filepath = os.path.join(self.logfolder,str(game_id)+".log")
         #with open(filepath,"a") as f:
         #    f.write(g.board.draw_me(pos=position))
         return True
+
+    def other_move_make_try(self):
+        try:
+            self.driver.find_element_by_id("btn_nextGame").click()
+        except Exception as e:
+            print(e)
+            self.driver.find_element_by_id("btn_extend+").click()
+            time.sleep(0.5)
+            self.driver.find_element_by_id("btn_acceptTie").click()
 
     def login(self):
         self.driver.get("https://www.yucata.de/de")
