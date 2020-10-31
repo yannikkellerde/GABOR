@@ -3,7 +3,7 @@ import random
 import requests
 import numpy as np
 from selenium import webdriver
-from selenium.common.exceptions import NoSuchElementException,StaleElementReferenceException,ElementNotInteractableException
+from selenium.common.exceptions import NoSuchElementException,StaleElementReferenceException,ElementNotInteractableException, ElementClickInterceptedException
 from selenium.webdriver.support.ui import Select
 import traceback
 import json
@@ -110,7 +110,7 @@ class Page_handler():
         time.sleep(1*self.time_multiplier)
         try:
             self.driver.find_element_by_id("btn_finishTurn").click()
-        except ElementNotInteractableException as e:
+        except (ElementNotInteractableException,ElementClickInterceptedException) as e:
             print(e)
             try:
                 self.driver.find_element_by_id("btn_nextGame").click()
@@ -328,7 +328,7 @@ class Page_handler():
         return True
 
     def do_one_evil(self):
-        self.driver = webdriver.Firefox()
+        self.driver = webdriver.Chrome("/usr/bin/chromedriver")
         try:
             self.login()
         except Exception as e:
