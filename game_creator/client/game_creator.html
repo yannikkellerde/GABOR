@@ -67,15 +67,15 @@ document.body.onmousedown = function(event) {
 document.body.onmouseup = function() {
     if (event.button==0){mouseDown=0}
 }
-const colors = ["#0000ff","#ffffff","#ff0000","#00cc00","#003300","#ff00ff","#6600cc","#000000","#ff6600"];
+const colors = ["radial-gradient(circle, rgb(2, 102, 252) 0%, rgb(2, 26, 53) 100%)","#ffffff","radial-gradient(circle, rgb(252, 2, 231) 0%, rgb(51, 2, 53) 100%)","radial-gradient(circle, rgb(252, 123, 2) 0%, rgb(53, 21, 2) 100%)","radial-gradient(circle, rgb(252, 227, 2) 0%, rgb(53, 45, 2) 100%)","radial-gradient(circle, rgba(2, 252, 15, 0.884) 0%, rgb(4, 53, 2) 100%)","radial-gradient(circle, rgb(149, 149, 149) 0%, rgb(24, 24, 24) 100%)","#000000","#ff6600"];
 const table = document.getElementById("board");
 const tbody = document.getElementById("square_holder");
 const col_palette = document.getElementById("color-palette");
 colors.forEach(col => {
     const div = document.createElement("div");
-    div.style.backgroundColor = col;
+    div.style.background = col;
     div.addEventListener("mousedown",event=>{
-        change_selected_color(event.target.style.backgroundColor);
+        change_selected_color(event.target.style.background);
     });
     col_palette.appendChild(div);
 });
@@ -120,7 +120,7 @@ function delete_selected(){
     selected.forEach(sq=>{
         tds[sq[0]][sq[1]].classList.remove("square");
         tds[sq[0]][sq[1]].classList.add("deleted");
-        tds[sq[0]][sq[1]].style.backgroundColor=null;
+        tds[sq[0]][sq[1]].style.background=null;
         config.sq_colors[sq[0]][sq[1]] = "deleted";
     });
     remove_stupid_winsquarecombs();
@@ -262,7 +262,7 @@ function update_buttons(){
 function change_selected_color(color){
     selected.forEach(sq=>{
         config.sq_colors[sq[0]][sq[1]] = color;
-        tds[sq[0]][sq[1]].style.backgroundColor=color;
+        tds[sq[0]][sq[1]].style.background=color;
         tds[sq[0]][sq[1]].classList.remove("deleted");
         tds[sq[0]][sq[1]].classList.add("square");
     });
@@ -341,7 +341,7 @@ function display_board(){
                 td.className = "deleted";
             }
             else{
-                td.style.backgroundColor = sq_col;
+                td.style.background = sq_col;
                 td.className = "square";
             }
             td.addEventListener("mousedown",select_or_unselect);

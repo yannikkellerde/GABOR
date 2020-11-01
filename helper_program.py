@@ -1,5 +1,5 @@
 import os,sys
-targ_path = "proofsets/full_sets"
+targ_path = "proofsets/full_game"
 os.makedirs(targ_path,exist_ok=True)
 start_parts = {}
 for fname in os.listdir("proofsets"):

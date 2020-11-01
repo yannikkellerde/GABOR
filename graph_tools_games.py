@@ -71,13 +71,24 @@ class Qango6x6_board(Board_game):
             self.position = list("ffffff"
                                  "ffffff"
                                  "ffffff"
-                                 "ffffff"
+                                 "ffffbf"
                                  "fffwff"
                                  "fffbff")
-            self.onturn = "b"
+            self.onturn = "w"
             self.game.graph_from_board()
-            blocked_sq = [22]
-            block_depths = set([0])
+            blocked_sq = []
+            block_depths = set()
+        elif b_count==5:
+            self.position = list("ffffff"
+                                 "ffffff"
+                                 "ffffff"
+                                 "ffbfff"
+                                 "fffwff"
+                                 "fffbff")
+            self.onturn = "w"
+            self.game.graph_from_board()
+            blocked_sq = []
+            block_depths = set()
         self.inv_maps()
         blocked_moves = set(self.node_map_rev[x] for x in blocked_sq)
         return blocked_moves,block_depths,threadblock
