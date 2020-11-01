@@ -62,7 +62,7 @@ class Ai_api():
             elif val==best:
                 best_move.append(move)
         best_move = best_move[:3]
-        probs = np.array([0.7,0.2,0.1])
+        probs = np.array([0.4,0.3,0.3])
         probs = probs[:len(best_move)]
         probs = probs/np.sum(probs)
         res_move = int(np.random.choice(best_move,p=probs))
