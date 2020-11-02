@@ -32,6 +32,7 @@
         <button class="w3-button w3-large w3-black disabled" id="go_end" onclick="go_end()">&raquo;</button>
     </div>
 </div>
+<script>var show_moves_on_start = true;</script>
 <!--Insert path to gamescript here-->
 <script>
 
@@ -193,11 +194,13 @@ function go_start(){
 }
 
 position = new Array(num_squares).fill(0);
-position_hist = [position]
-hist_index = 0
+position_hist = [position];
+hist_index = 0;
 onturn = 2;
 reset();
-show_moves();
+if (show_moves_on_start){
+    show_moves();
+}
 </script>
 </body>
 </html>
