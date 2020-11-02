@@ -52,43 +52,21 @@ class Qango6x6_board(Board_game):
         self.winsquarenums.update(findfivers(self.squares))
         remove_useless_wsn(self.winsquarenums)
 
-    def get_blocked_squares(self,b_count):
+    def get_blocked_squares(self,ruleset):
         threadblock = set()
-        if b_count==0:
+        if ruleset=="standard":
             blocked_sq = []
             block_depths = set()
-        if b_count==1 or b_count==2:
+        if ruleset=="burg" or ruleset=="burg_2":
             blocked_sq = [7,10,14,15,20,21,25,28]
-            if b_count==2:
+            if ruleset=="burg_2":
                 threadblock.add(1)
                 block_depths = set([0,2])
             else:
                 block_depths = set([0])
-        elif b_count==3:
+        elif ruleset=="tournament":
             blocked_sq = [7,8,9,10,13,14,15,16,19,20,21,22,25,26,27,28]
             block_depths = set([0])
-        elif b_count==4:
-            self.position = list("ffffff"
-                                 "ffffff"
-                                 "ffffff"
-                                 "ffffbf"
-                                 "fffwff"
-                                 "fffbff")
-            self.onturn = "w"
-            self.game.graph_from_board()
-            blocked_sq = []
-            block_depths = set()
-        elif b_count==5:
-            self.position = list("ffffff"
-                                 "ffffff"
-                                 "ffffff"
-                                 "ffbfff"
-                                 "fffwff"
-                                 "fffbff")
-            self.onturn = "w"
-            self.game.graph_from_board()
-            blocked_sq = []
-            block_depths = set()
         self.inv_maps()
         blocked_moves = set(self.node_map_rev[x] for x in blocked_sq)
         return blocked_moves,block_depths,threadblock
@@ -137,18 +115,18 @@ class Qango7x7_board(Board_game):
         self.winsquarenums.update(findfivers(self.squares))
         remove_useless_wsn(self.winsquarenums)
 
-    def get_blocked_squares(self,b_count):
+    def get_blocked_squares(self,ruleset):
         self.inv_maps()
         threatblock = set()
         block_depths = set([0])
-        if b_count==0:
+        if ruleset=="standard":
             blocked_sq = []
-        elif b_count==1:
+        elif ruleset=="burg":
             blocked_sq = [8,12,16,17,18,23,25,30,31,32,36,40]
-        elif b_count==2:
+        elif ruleset=="profi_2":
             blocked_sq = [8,12,16,17,18,23,25,30,31,32,36,40,
                           9,10,11,15,19,22,26,29,33,37,38,39]
-        elif b_count==3:
+        elif ruleset=="profi_1":
             blocked_sq = [8,12,16,17,18,23,25,30,31,32,36,40,
                           9,10,11,15,19,22,26,29,33,37,38,39,
                           3,21,27,45]
@@ -214,15 +192,15 @@ class Qango7x7_plus_board(Board_game):
         print(out)
         return out
 
-    def get_blocked_squares(self,b_count):
+    def get_blocked_squares(self,ruleset):
         self.inv_maps()
         threadblock = set()
         block_depths = set([0])
-        if b_count==0:
+        if ruleset=="standard":
             blocked_sq = []
-        elif b_count==1:
+        elif ruleset=="rand":
             blocked_sq = [4,5,6,9,10,11,12,13,16,17,18,19,20,23,24,25,26,27,30,31,32]
-        elif b_count==2:
+        elif ruleset=="tournament":
             allowed = [6,13,23,30]
             blocked_sq = list(filter(lambda x:x not in allowed,range(self.squares)))
         blocked_moves = set(self.node_map_rev[x] for x in blocked_sq)

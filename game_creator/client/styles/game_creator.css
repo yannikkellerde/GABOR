@@ -34,7 +34,7 @@ aside{
     flex-direction: column;
     flex-wrap: nowrap;
     color:white;
-    justify-content:center;
+    justify-content:flex-start;
     text-align: center;
     left:0px;
     top:0px;
@@ -43,6 +43,7 @@ aside{
     min-height: min-content;
     overflow-y:scroll;
     background-color: #19222a;
+    font-family: Roboto, 'Helvetica Neue', Arial;
 }
 #color-palette{
     position: relative;
@@ -159,4 +160,47 @@ span.header{
 }
 #add_squares{
     margin-left:40px;
+}
+.column{
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+.row{
+    position: relative;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+#savestuff{
+    font-family: Roboto, 'Helvetica Neue', Arial;
+    margin-top:30px;
+}
+#name{
+    width:160px;
+    border:none;
+    font-size:18;
+    height:25px;
+    background-color:#09121a;
+    color:white;
+    margin:10px 20px 10px 5px;
+}
+#namdiv{
+    font-size:20px;
+}
+#save{
+    margin-right: 5px;
+}
+#save_message{
+    position:relative;
+    margin:5px;
+    transition: 0.3s;
+    color:red;
 }

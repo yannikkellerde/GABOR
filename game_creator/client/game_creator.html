@@ -11,6 +11,13 @@
         </tbody>
     </table>
     <aside>
+        <div class="row" id="savestuff"><div id="namediv">Name: <input id="name" type="text" value="Test"></div>
+            <div class="row">
+                <button class="addbutton" id="save">Save</button>
+                <button class="addbutton" id="solve">To solve window</button>
+            </div>
+        </div>
+        <div class="row" id="save_message"></div>
         <div class="slider_holder">
             <label class="slider_name">Number of columns</label>
             <input id="num_columns" class="slider_input" type="range" value=30 data-max=20>
@@ -55,7 +62,7 @@ import { arr_eq, arr_in_arr, arr_set_search, issubset, filter_dups} from './js/u
 import {find_rows, find_columns, find_first_diagonals, find_second_diagonals, find_squares} from './js/find_patterns.js'
 const board_size = Math.min(document.body.getBoundingClientRect().height * 0.9, document.body.getBoundingClientRect().width * 0.5);
 const config = {
-    rows:0,cols:0,name:"default",winsquarecombos:{},"squares":0,"blocked_squares":{"default":[]},sq_colors:[],board_height:board_size,board_width:board_size
+    rows:0,cols:0,name:"default",winsquarecombos:{},"blocked_squares":{"default":[]},"squares":0,sq_colors:[]
 }
 var selected_wp = null;
 var tds = [];
@@ -79,6 +86,57 @@ colors.forEach(col => {
     });
     col_palette.appendChild(div);
 });
+function xml_http_post(url, data, callback) {
+    var req = new XMLHttpRequest();
+    req.open("POST", url, true);
+    req.onreadystatechange = function() {
+        if (this.readyState == 4) {
+            callback(JSON.parse(this.responseText));
+        }
+    }
+    req.send(JSON.stringify(data));
+}
+function show_save_message(response){
+    document.getElementById("save_message").innerText = response["result"];
+    setTimeout(function(){document.getElementById("save_message").innerText = ""},3000);
+}
+function save(){
+    config.winsquarenums = [];
+    config.deleted = [];
+    for (var y=0;y<config.rows;y++){
+        for (var x=0;x<config.cols;x++){
+            if (config.sq_colors[y][x]=="deleted"){
+                config.deleted.push(y*config.cols+x);
+            }
+        }
+    }
+    Object.values(config.winsquarecombos).forEach(sammel=>{
+        sammel.forEach(wsc=>{
+            var wsn = [];
+            wsc.forEach(wc=>{
+                var wn = wc[0]*config.cols+wc[1];
+                var abzug = 0;
+                for (var i=0;i<config.deleted.length;i++){
+                    if (config.deleted[i]<wn){
+                        abzug += 1;
+                    }
+                    else{
+                        break;
+                    }
+                }
+                wn-=abzug;
+                wsn.push(wn);
+            });
+            config.winsquarenums.push(wsn);
+        });
+    });
+    config.name = document.getElementById("name").value;
+    console.log(config.name);
+    config.squares = config.rows*config.cols-config.deleted.length;
+    xml_http_post("game_creator.html",{"game":config},show_save_message);
+}
+document.getElementById("save").addEventListener("click",save);
+
 function add_row_patterns(){
     const pat_len = Number(document.getElementById("rownumber").value);
     if (pat_len<2 || pat_len>21){
@@ -324,7 +382,7 @@ function select_or_unselect(event){
 }
 function display_board(){
     const rect = table.getBoundingClientRect()
-    const sq_size = Math.min(config.board_width/config.cols,config.board_height/config.rows)
+    const sq_size = Math.min(board_size/config.cols,board_size/config.rows)
     tbody.innerHTML = ""
     tds = []
     for (var i=0;i<config.sq_colors.length;i++){

@@ -108,6 +108,9 @@ class Board_game():
         self.game.graph_from_board()      
         self.create_node_hash_map()
 
+    def get_blocked_squares(self,ruleset):
+        return set(),set(),set()
+
     def set_position(self,pos,onturn):
         self.position = pos
         self.onturn = onturn

@@ -1,5 +1,5 @@
 import networkx as nx
-from graph_tools_games import Tic_tac_toe,Qango6x6,Qango7x7,Qango7x7_plus
+from graph_tools_games import Tic_tac_toe,Qango6x6,Qango7x7,Qango7x7_plus,Json_game
 from solve_graph_tools import PN_search
 import matplotlib.pyplot as plt
 import time
@@ -130,7 +130,7 @@ def test_pos_from_graph():
     #game.board.draw_me(reco_pos)
 
 def display_wsn():
-    game = Qango6x6()
+    game = Json_game("json_games/tic_tac_toe.json")
     count = 0
     for wsn in game.board.winsquarenums:
         if len(wsn)!=3:
@@ -154,6 +154,10 @@ def test_ai_api():
     onturn = "w"
     print(ai.get_move("qango6x6",3,onturn,pos))
 
+def test_json_game():
+    game = Json_game("json_games/tic_tac_toe.json")
+    game.board.draw_me()
+
 if __name__ == "__main__":
     #test_moving()
     #test_board_representation()
@@ -161,5 +165,6 @@ if __name__ == "__main__":
     #test_threat_search()
     #test_pos_from_graph()
     #test_win_thread_search()
-    #display_wsn()
-    test_ai_api()
+    display_wsn()
+    #test_ai_api()
+    #test_json_game()

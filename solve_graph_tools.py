@@ -3,7 +3,7 @@ from util import resources_avaliable,draw_pn_tree
 import gc
 import pickle
 import os,sys
-from graph_tools_games import Tic_tac_toe,Qango6x6,Qango7x7,Qango7x7_plus
+from graph_tools_games import Tic_tac_toe,Qango6x6,Qango7x7,Qango7x7_plus,Json_game
 from graph_tools_game import Graph_game
 from data_magic import save_sets
 from graph_tool.all import *
@@ -192,8 +192,8 @@ class PN_search():
     def pn_search(self,onturn_proves=True,verbose=True,save=True,burgregel=2):
         blocked,block_depths,threadblock = self.game.board.get_blocked_squares(burgregel)
         prove_color = self.game.onturn if onturn_proves else ("w" if self.game.onturn=="b" else "b")
-        self.prooffile = f"proofsets/{prove_color}_{self.game}_{burgregel}p.pkl"
-        self.disprooffile=f"proofsets/{prove_color}_{self.game}_{burgregel}d.pkl"
+        self.prooffile = f"proofsets/{prove_color}_{self.game}_{burgregel}_p.pkl"
+        self.disprooffile=f"proofsets/{prove_color}_{self.game}_{burgregel}_d.pkl"
         self.loadsets()
         self.game.hashme()
         hashval = self.game.hash
@@ -258,7 +258,8 @@ class PN_search():
 
 if __name__ == "__main__":
     game = sys.argv[1]
-    burgregel = int(sys.argv[2])
+    burgregel = sys.argv[2]
+    onturn_proves = not (len(sys.argv)>3 and sys.argv[3].lower()=="false")
     if game=="qango6x6":
         g = Qango6x6()
     elif game=="qango7x7":
@@ -267,8 +268,11 @@ if __name__ == "__main__":
         g = Tic_tac_toe()
     elif game=="qango7x7_plus":
         g = Qango7x7_plus()
+    elif game=="json":
+        g = Json_game(os.path.join("json_games",sys.argv[2]+".json"))
+        burgregel = sys.argv[3]
+        onturn_proves = not (len(sys.argv)>4 and sys.argv[4].lower()=="false")
     else:
         raise ValueError(f"Game not found {game}")
     pn_s = PN_search(g)
-    onturn_proves = not (len(sys.argv)>3 and sys.argv[3].lower()=="false")
     pn_s.pn_search(onturn_proves=onturn_proves,burgregel=burgregel)
