@@ -116,8 +116,8 @@ if __name__ == "__main__":
         raise ValueError(f"Game not found {my_folder}")
     try:
         if len(sys.argv)>start_arg:
-            game.board.load_sets(provenfile_black=f"../proofsets/b_{game_name}_{sys.argv[start_arg]}p.pkl",
-                                 disprovenfile_black=f"../proofsets/b_{game_name}_{sys.argv[start_arg]}d.pkl")
+            game.board.load_sets(provenfile_black=f"../proofsets/b_{game_name}_{sys.argv[start_arg]}_p.pkl",
+                                 disprovenfile_black=f"../proofsets/b_{game_name}_{sys.argv[start_arg]}_d.pkl")
         else:
             game.board.load_sets(provenfile_black=f"../proofsets/full_game/b_{game_name}_p.pkl",
                                  disprovenfile_black=f"../proofsets/full_game/b_{game_name}_d.pkl")
@@ -125,8 +125,8 @@ if __name__ == "__main__":
         print(e)
     try:
         if len(sys.argv)>start_arg:
-            game.board.load_sets(provenfile_white=f"../proofsets/w_{game_name}_{sys.argv[start_arg]}p.pkl",
-                                 disprovenfile_white=f"../proofsets/w_{game_name}_{sys.argv[start_arg]}d.pkl")
+            game.board.load_sets(provenfile_white=f"../proofsets/w_{game_name}_{sys.argv[start_arg]}_p.pkl",
+                                 disprovenfile_white=f"../proofsets/w_{game_name}_{sys.argv[start_arg]}_d.pkl")
         else:
             game.board.load_sets(provenfile_white=f"../proofsets/full_game/w_{game_name}_p.pkl",
                                  disprovenfile_white=f"../proofsets/full_game/w_{game_name}_d.pkl")

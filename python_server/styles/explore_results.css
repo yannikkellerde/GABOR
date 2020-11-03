@@ -122,7 +122,7 @@ html {
 
 #main-wrap {
     position: absolute;
-    left:60%;
+    left:75%;
     top:20%;
 }
 
@@ -233,4 +233,21 @@ td.occupied{
 .invis{
     visibility: hidden;
     cursor:default;
+}
+aside{
+    position:fixed;
+    display:flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    color:white;
+    justify-content:flex-start;
+    text-align: center;
+    left:0px;
+    top:0px;
+    width:20%;
+    height:100%;
+    min-height: min-content;
+    overflow-y:scroll;
+    background-color: #19222a;
+    font-family: Roboto, 'Helvetica Neue', Arial;
 }
