@@ -39,6 +39,43 @@
 <!--Insert path to gamescript here-->
 <script>
 
+function letter_board(){
+    const w = 50;
+    const letters = "ABCDEFGHJKLMNOPQRSTUVWXYZ"
+    const board = document.getElementById("board");
+    const tbody = board.children[0];
+    const rows = tbody.children.length;
+    const cols = tbody.children[0].children.length;
+    const letter_wrap = document.createElement("div");
+    letter_wrap.className = "letter_wrap"
+    const board_rect = board.getBoundingClientRect();
+    letter_wrap.style.left = (board_rect.left-w)+"px";
+    letter_wrap.style.top = (board_rect.top-w)+"px";
+    letter_wrap.style.width = (board_rect.width+w)+"px";
+    letter_wrap.style.height = (board_rect.height+w)+"px";
+    for (let i = 0; i < cols;i++){
+        var adiv = document.createElement("div");
+        adiv.innerText = letters[i];
+        adiv.style.width = ((board_rect.width/cols))+"px";
+        adiv.style.left = (w+((board_rect.width/cols)*i))+"px";
+        adiv.style.height = w+"px";
+        adiv.style.top = 0;
+        adiv.className = "letdiv";
+        letter_wrap.appendChild(adiv);
+    }
+    for (let i = 0; i < rows; i++) {
+        var adiv = document.createElement("div");
+        adiv.innerText = i+1;
+        adiv.style.height = ((board_rect.width/rows))+"px";
+        adiv.style.top = (w+(board_rect.width/rows)*i)+"px";
+        adiv.style.width = w+"px";
+        adiv.style.left = 0;
+        adiv.className = "letdiv";
+        letter_wrap.appendChild(adiv);
+    }
+    document.body.appendChild(letter_wrap);
+}
+
 function set_disablility(){
     document.getElementById("go_start").classList.remove("disabled")
     document.getElementById("go_back").classList.remove("disabled")
@@ -203,6 +240,7 @@ onturn = 2;
 reset();
 if (show_moves_on_start){
     show_moves();
+    letter_board();
 }
 </script>
 </body>

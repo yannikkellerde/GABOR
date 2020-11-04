@@ -14,6 +14,7 @@
     position: absolute;
     border-collapse: collapse;
     table-layout: fixed;
+    z-index:5;
 }
 
 #board td{
@@ -140,7 +141,7 @@ html {
 }
 
 body {
-    background: #161512 linear-gradient(to bottom, #2e2a24, #161512 116px) no-repeat;
+    background: white;
     height:100vh;
     width:100vw;
 }
@@ -250,4 +251,20 @@ aside{
     overflow-y:scroll;
     background-color: #19222a;
     font-family: Roboto, 'Helvetica Neue', Arial;
+}
+#board{
+    left: 25%;
+}
+.letdiv{
+    position:absolute;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size:25px;
+    font-family: Roboto, 'Helvetica Neue', Arial;
+    color:black;
+}
+.letter_wrap{
+    position:absolute;
+    z-index:0;
 }

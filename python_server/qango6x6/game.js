@@ -15,7 +15,7 @@ for (var tr of tbody.children){
 }
 
 function move_int_to_str(int_move){
-    return "abcdef"[int_move % 6]+(parseInt(int_move/6)+1)
+    return "ABCDEFGHJKLMNOPQRSTUVWXYZ"[int_move % 6]+(parseInt(int_move/6)+1)
 }
 
 function get_squares(){

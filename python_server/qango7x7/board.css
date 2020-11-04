@@ -1,15 +1,3 @@
-#board{
-    width: 750px;
-    height: 750px;
-    left: 50px;
-    top: 50px;
-}
-#board tr{
-    height:125px;
-}
-#board td{
-    width:125px;
-}
 .blocked_square{
     text-align: center;
     font-size: 82px;
@@ -22,8 +10,9 @@
     background-color: black;
 }
 .stone{
-    width:99px;
-    height:99px;
+    width:80%;
+    height:80%;
     border-radius: 50%;
-    margin-left:13px;
+    display: inline-block;
+    position: relative;
 }
