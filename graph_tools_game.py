@@ -349,3 +349,6 @@ class Graph_game():
             x = self.view.vp.o[vertex]
             fill_color[vertex] = (0,0,1,1) if x==0 else ((0,1,1,1) if x==1 else ((0,0,0,1) if x==2 else (255,0,0,1)))
         graph_draw(self.view, vprops={"fill_color":fill_color}, vertex_text=self.view.vertex_index, output=f"game_state_{index}.pdf")
+
+    def __str__(self):
+        return self.name

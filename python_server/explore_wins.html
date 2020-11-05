@@ -2,13 +2,38 @@
 <html lang="en">
 <head>
     <link rel="stylesheet" href="../styles/explore_results.css">
+    <link rel="stylesheet" href="../styles/general_stuff.css">
     <!--Insert link to stylesheet here-->
     <meta charset="utf-8"/>
 </head>
 
 <body>
 <aside>
-    
+    <div id="ruleset_stuff">
+        <select id="choose_ruleset"></select><button class="addbutton margin-10" id="remove_ruleset">Delete ruleset</button>
+        <div id="radios" class="row">
+            <div class="rad_holder column">
+                <label for="play_moves">Play Moves</label>
+                <input id="play_moves" type="radio" name="block" value="play_moves" checked/>
+            </div>
+            <div class="rad_holder column">
+                <label for="sel_block">Select Blocked</label>
+                <input id="sel_block" type="radio" name="block" value="play_moves"/>
+            </div>
+        </div>
+        <div class="row_num">Name: <input id="rulename" class="name" type="text" value="Test" style="width:100px">
+            <button id="add_ruleset" class="addbutton margin-10">Add ruleset</button>
+        </div>
+    </div>
+    <div id="solve_stuff" class="column">
+        <select id="select_proofset"></select>
+        <input type="text" id="text_proofset" class="name" style="width:70%;font-size:14px;"/>
+        <div class="row">
+            <button class="addbutton margin-10" id="search_for_black">Search win for black</button>
+            <button class="addbutton margin-10" id="search_for_white">Search win for white</button>
+        </div>
+        <div id="console"></div>
+    </div>
 </aside>
 <!--Insert board here-->
 <div id="main-wrap">
@@ -91,6 +116,22 @@ function set_disablility(){
     }
 }
 
+function set_button_activation(){
+    if (get_depth()==0){
+        document.getElementById("add_ruleset").classList.remove("greyed");
+        if (Object.keys(rulesets).length>0){
+            document.getElementById("remove_ruleset").classList.remove("greyed");
+        }
+        else{
+            document.getElementById("remove_ruleset").classList.add("greyed");
+        }
+    }
+    else{
+        document.getElementById("add_ruleset").classList.add("greyed");
+        document.getElementById("remove_ruleset").classList.add("greyed");
+    }
+}
+
 function xml_http_post(url, data, callback) {
     req = new XMLHttpRequest();
     req.open("POST", url, true);
@@ -127,12 +168,27 @@ function show_moves(){
             eval_elem.innerText = evalconvert[evaluation];
             tr.appendChild(move_elem);
             tr.appendChild(eval_elem);
+            tr.setAttribute("data-move",move);
             tr.setAttribute("onclick","real_move("+move+")")
             document.getElementById("table_data").appendChild(tr);
         }
+        hide_blocked();
     }
     my_data = {"position":position,"onturn":onturn-1}
     xml_http_post("python_server/explore_wins.html",my_data,have_moves_to_show)
+}
+
+function hide_blocked(){
+    var trs = document.getElementById("table_data").children
+    for (var tr of trs){
+        var move = Number(tr.getAttribute("data-move"));
+        if (blocked_squares.includes(move)){
+            tr.setAttribute("style","display:none")
+        }
+        else{
+            tr.setAttribute("style","")
+        }
+    }
 }
 
 function getmoves(position){
@@ -154,25 +210,46 @@ function real_move(move){
     show_pos();
     show_moves();
     set_disablility();
+    set_button_activation();
+    blocked_squares = [];
+    hide_blocked();
 }
 
 function player_move(move){
-    if (position[move]==0){
-        real_move(move)
+    if (mode=="play"){
+        if (position[move]==0&&!blocked_squares.includes(move)){
+            real_move(move);
+        }
     }
+    else if (mode=="sel_block"){
+        if (blocked_squares.includes(move)){
+            unblock_square(move);
+        }
+        else{
+            block_squares([move]);
+        }
+    }
+}
+
+function get_depth(){
+    var notf=0;
+    position.forEach(function(f){
+        if (f!=0){
+            notf++;
+        }
+    });
+    return notf;
 }
 
 function reset(){
     position = new Array(num_squares).fill(0);
     onturn = 2;
-    var tds = get_squares()
-    for (var i=0;i<tds.length;i++){
-        tds[i].setAttribute("onclick", "player_move("+i+")");
+    for (var i=0;i<squares.length;i++){
+        squares[i].setAttribute("onclick", "player_move("+i+")");
     }
 }
 
 function show_pos(){
-    squares = get_squares();
     for (i=0;i<squares.length;i++){
         td = squares[i];
         if (position[i] == 0){
@@ -192,6 +269,9 @@ function move_forward(){
     hist_index++;
     position = position_hist[hist_index].slice()
     onturn = onturn==1?2:1;
+    blocked_squares = [];
+    hide_blocked();
+    set_button_activation();
 }
 
 function go_forward(){
@@ -214,7 +294,10 @@ function move_back(){
     if (hist_index==0){return}
     hist_index--;
     onturn = onturn==1?2:1;
-    position = position_hist[hist_index].slice()
+    position = position_hist[hist_index].slice();
+    blocked_squares = [];
+    hide_blocked();
+    set_button_activation();
 }
 
 function go_back(){
@@ -222,6 +305,10 @@ function go_back(){
     show_moves();
     set_disablility();
     show_pos();
+    var depth = get_depth();
+    if (depth==0){
+        block_squares(rulesets[cur_rule]);
+    }
 }
 
 function go_start(){
@@ -231,17 +318,105 @@ function go_start(){
     show_moves();
     set_disablility();
     show_pos();
+    var depth = get_depth();
+    if (depth==0){
+        block_squares(rulesets[cur_rule]);
+    }
 }
 
-position = new Array(num_squares).fill(0);
-position_hist = [position];
-hist_index = 0;
-onturn = 2;
+function unblock_squares(){
+    for (var i=0;i<squares.length;i++){
+        if (squares[i].innerHTML=="&#10060;" || squares[i].innerHTML=="❌"){
+            squares[i].innerHTML = "";
+        }
+    }
+    blocked_squares = [];
+    hide_blocked();
+}
+
+function unblock_square(sq){
+    var ind = blocked_squares.indexOf(sq);
+    if (ind!=-1){
+        squares[sq].innerHTML = "";
+        blocked_squares.splice(ind, 1);
+    }
+    hide_blocked();
+}
+
+function block_squares(sq_nums){
+    sq_nums.forEach(function(sq_num){
+        squares[sq_num].innerHTML = "&#10060;";
+        if (!blocked_squares.includes(sq_num)){
+            blocked_squares.push(sq_num);
+        }
+    });
+    hide_blocked();
+}
+
+function set_rulesets(rss){
+    rulesets = rss;
+    const sel = document.getElementById("choose_ruleset");
+    unblock_squares();
+    sel.innerHTML = "";
+    var first = true;
+    for (const [key,value] of Object.entries(rulesets)){
+        var opt = document.createElement("option");
+        opt.innerText = opt.value = key;
+        if (first){
+            opt.selected = true;
+            cur_rule = key;
+            block_squares(value);
+        }
+        sel.appendChild(opt);
+    }
+}
+
+var position = new Array(num_squares).fill(0);
+var position_hist = [position];
+var hist_index = 0;
+var onturn = 2;
+var rulesets = [];
+var cur_rule = null;
+var squares = null;
+var blocked_squares = [];
+var mode = "play";
+
+if (show_moves_on_start){
+    squares = get_squares();
+}
 reset();
 if (show_moves_on_start){
     show_moves();
     letter_board();
 }
+document.getElementById("play_moves").addEventListener("click", function(e){
+    mode = "play";
+});
+document.getElementById("sel_block").addEventListener("click", function(e){
+    mode = "sel_block";
+    console.log(mode);
+});
+document.getElementById("add_ruleset").addEventListener("click", function(e){
+    var rulename = document.getElementById("rulename").value;
+    var depth = get_depth();
+    if (depth == 0 && rulename.length>0){
+        xml_http_post("board.html",{"new_rule":rulename,"blocked":blocked_squares},set_rulesets);
+    }
+});
+document.getElementById("remove_ruleset").addEventListener("click",function(e){
+    var depth = get_depth();
+    if (depth==0){
+        xml_http_post("board.html",{"del_rule":cur_rule},set_rulesets);
+    }
+});
+document.getElementById("choose_ruleset").addEventListener("change", function(e){
+    cur_rule = e.target.value;
+    if (get_depth()==0){
+        unblock_squares();
+        block_squares(rulesets[cur_rule]);
+    }
+})
+xml_http_post("board.html",{request:"rulesets"},set_rulesets);
 </script>
 </body>
 </html>

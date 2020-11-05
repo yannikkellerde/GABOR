@@ -60,9 +60,15 @@ class Post_handler(SimpleHTTPRequestHandler):
         data_str = self.rfile.read(length)
         data = json.loads(data_str)
         if "request" in data:
-            self._set_headers()
-            self.wfile.write(json.dumps(game.config).encode())
-        else:
+            if data["request"] == "config":
+                self._set_headers()
+                self.wfile.write(json.dumps(game.config).encode())
+            if data["request"] == "rulesets":
+                self._set_headers()
+                self.wfile.write(json.dumps(game.board.rulesets).encode())
+            if data["request"] == "aval_proofsets":
+
+        elif "position" in data:
             real_pos = [("f" if x==0 else ("b" if x==2 else "w")) for x in data["position"]]
             print(real_pos,game.board.position)
             game.board.set_position(real_pos,"b" if data["onturn"]==1 else "w")
@@ -76,6 +82,18 @@ class Post_handler(SimpleHTTPRequestHandler):
             # send the message back
             self._set_headers()
             self.wfile.write(json.dumps({"moves":moves_with_eval}).encode())
+        elif "new_rule" in data:
+            game.board.rulesets[data["new_rule"]] = data["blocked"]
+            with open(os.path.join(base_path,"../rulesets",game.name+".json"),"w") as f:
+                json.dump(game.board.rulesets,f)
+            self._set_headers()
+            self.wfile.write(json.dumps(game.board.rulesets).encode())
+        elif "del_rule" in data:
+            del game.board.rulesets[data["del_rule"]]
+            with open(os.path.join(base_path,"../rulesets",game.name+".json"),"w") as f:
+                json.dump(game.board.rulesets,f)
+            self._set_headers()
+            self.wfile.write(json.dumps(game.board.rulesets).encode())
 
 def open_browser():
     """Start a browser after waiting for half a second."""
@@ -98,7 +116,6 @@ def start_server():
 
 if __name__ == "__main__":
     my_folder = sys.argv[1]
-    game_name = my_folder
     start_arg = 2
     if "qango6x6"==my_folder:
         game = Qango6x6()
@@ -110,26 +127,17 @@ if __name__ == "__main__":
         game = Qango7x7_plus()
     elif my_folder == "json":
         game = Json_game(os.path.join(base_path,"../json_games",sys.argv[2]+".json"))
-        game_name = sys.argv[2]
         start_arg = 3
     else:
         raise ValueError(f"Game not found {my_folder}")
     try:
-        if len(sys.argv)>start_arg:
-            game.board.load_sets(provenfile_black=f"../proofsets/b_{game_name}_{sys.argv[start_arg]}_p.pkl",
-                                 disprovenfile_black=f"../proofsets/b_{game_name}_{sys.argv[start_arg]}_d.pkl")
-        else:
-            game.board.load_sets(provenfile_black=f"../proofsets/full_game/b_{game_name}_p.pkl",
-                                 disprovenfile_black=f"../proofsets/full_game/b_{game_name}_d.pkl")
+        game.board.load_sets(provenfile_black=f"../proofsets/{game.name}/b_p.pkl",
+                             disprovenfile_black=f"../proofsets/{game.name}/b_d.pkl")
     except FileNotFoundError as e:
         print(e)
     try:
-        if len(sys.argv)>start_arg:
-            game.board.load_sets(provenfile_white=f"../proofsets/w_{game_name}_{sys.argv[start_arg]}_p.pkl",
-                                 disprovenfile_white=f"../proofsets/w_{game_name}_{sys.argv[start_arg]}_d.pkl")
-        else:
-            game.board.load_sets(provenfile_white=f"../proofsets/full_game/w_{game_name}_p.pkl",
-                                 disprovenfile_white=f"../proofsets/full_game/w_{game_name}_d.pkl")
+        game.board.load_sets(provenfile_white=f"../proofsets/{game.name}/w_p.pkl",
+                             disprovenfile_white=f"../proofsets/{game.name}/w_d.pkl")
     except FileNotFoundError as e:
         print(e)
     endgame_depth = 0

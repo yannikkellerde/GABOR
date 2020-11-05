@@ -5,6 +5,8 @@ from graph_tool.all import *
 import json
 import matplotlib.pyplot as plt
 from collections import defaultdict
+import os,sys
+base_path = os.path.abspath(os.path.dirname(__file__))
 
 class Json_game(Graph_game):
     def __init__(self,json_path):
@@ -14,8 +16,7 @@ class Json_game(Graph_game):
         self.board = Json_board(self.config)
         self.board.game = self
         self.graph_from_board()
-    def __str__(self):
-        return self.config["name"]
+        self.name = self.config["name"]
 
 class Json_board(Board_game):
     def __init__(self,config):
@@ -23,11 +24,10 @@ class Json_board(Board_game):
         self.squares = config["squares"]
         self.position = ["f" for _ in range(self.squares)]
         self.winsquarenums = set(frozenset(x) for x in config["winsquarenums"])
-        self.blocked_sq = config["blocked_squares"]
         remove_useless_wsn(self.winsquarenums)
+        with open(os.path.join(base_path,f"rulesets/{config['name']}.json"),"r") as f:
+            self.rulesets = json.load(f)
 
-    def get_blocked_squares(self,rulename):
-        return self.blocked_sq[rulename],set([0]),set()
 
 class Qango6x6(Graph_game):
     def __init__(self):
@@ -35,8 +35,7 @@ class Qango6x6(Graph_game):
         self.board = Qango6x6_board()
         self.board.game = self
         self.graph_from_board()
-    def __str__(self):
-        return "qango6x6"
+        self.name = "qango6x6"
 
 class Qango6x6_board(Board_game):
     def __init__(self):
@@ -51,25 +50,8 @@ class Qango6x6_board(Board_game):
         self.winsquarenums.update(findsquares(self.squares))
         self.winsquarenums.update(findfivers(self.squares))
         remove_useless_wsn(self.winsquarenums)
-
-    def get_blocked_squares(self,ruleset):
-        threadblock = set()
-        if ruleset=="standard":
-            blocked_sq = []
-            block_depths = set()
-        if ruleset=="burg" or ruleset=="burg_2":
-            blocked_sq = [7,10,14,15,20,21,25,28]
-            if ruleset=="burg_2":
-                threadblock.add(1)
-                block_depths = set([0,2])
-            else:
-                block_depths = set([0])
-        elif ruleset=="tournament":
-            blocked_sq = [7,8,9,10,13,14,15,16,19,20,21,22,25,26,27,28]
-            block_depths = set([0])
-        self.inv_maps()
-        blocked_moves = set(self.node_map_rev[x] for x in blocked_sq)
-        return blocked_moves,block_depths,threadblock
+        with open(os.path.join(base_path,"rulesets/qango6x6.json"),"r") as f:
+            self.rulesets = json.load(f)
 
 class Tic_tac_toe(Graph_game):
     def __init__(self):
@@ -77,8 +59,7 @@ class Tic_tac_toe(Graph_game):
         self.board = Tic_tac_toe_board()
         self.board.game = self
         self.graph_from_board()
-    def __str__(self):
-        return "tic_tac_toe"
+        self.name = "tic_tac_toe"
 
 class Tic_tac_toe_board(Board_game):
     def __init__(self):
@@ -88,6 +69,8 @@ class Tic_tac_toe_board(Board_game):
         self.winsquarenums = {frozenset({0,1,2}),frozenset({3,4,5}),frozenset({6,7,8}),
                               frozenset({0,3,6}),frozenset({1,4,7}),frozenset({2,5,8}),
                               frozenset({0,4,8}),frozenset({2,4,6})}
+        with open(os.path.join(base_path,"rulesets/tic_tac_toe.json"),"r") as f:
+            self.rulesets = json.load(f)
 
 class Qango7x7(Graph_game):
     def __init__(self):
@@ -95,8 +78,7 @@ class Qango7x7(Graph_game):
         self.board = Qango7x7_board()
         self.board.game = self
         self.graph_from_board()
-    def __str__(self):
-        return "qango7x7"
+        self.name = "qango7x7"
 
 class Qango7x7_board(Board_game):
     def __init__(self):
@@ -114,24 +96,8 @@ class Qango7x7_board(Board_game):
         self.winsquarenums.update(findsquares(self.squares))
         self.winsquarenums.update(findfivers(self.squares))
         remove_useless_wsn(self.winsquarenums)
-
-    def get_blocked_squares(self,ruleset):
-        self.inv_maps()
-        threatblock = set()
-        block_depths = set([0])
-        if ruleset=="standard":
-            blocked_sq = []
-        elif ruleset=="burg":
-            blocked_sq = [8,12,16,17,18,23,25,30,31,32,36,40]
-        elif ruleset=="profi_2":
-            blocked_sq = [8,12,16,17,18,23,25,30,31,32,36,40,
-                          9,10,11,15,19,22,26,29,33,37,38,39]
-        elif ruleset=="profi_1":
-            blocked_sq = [8,12,16,17,18,23,25,30,31,32,36,40,
-                          9,10,11,15,19,22,26,29,33,37,38,39,
-                          3,21,27,45]
-        blocked_moves = set(self.node_map_rev[x] for x in blocked_sq)
-        return blocked_moves,block_depths,threatblock
+        with open(os.path.join(base_path,"rulesets/qango7x7.json"),"r") as f:
+            self.rulesets = json.load(f)
 
 class Qango7x7_plus(Graph_game):
     def __init__(self):
@@ -139,8 +105,7 @@ class Qango7x7_plus(Graph_game):
         self.board = Qango7x7_plus_board()
         self.board.game = self
         self.graph_from_board()
-    def __str__(self):
-        return "qango7x7_plus"
+        self.name = "qango7x7_plus"
 
 class Qango7x7_plus_board(Board_game):
     def __init__(self):
@@ -158,6 +123,8 @@ class Qango7x7_plus_board(Board_game):
         self.winsquarenums.update(findfivers(49))
         remove_useless_wsn(self.winsquarenums)
         self.change_wsn()
+        with open(os.path.join(base_path,"rulesets/qango7x7_plus.json"),"r") as f:
+            self.rulesets = json.load(f)
 
     def change_wsn(self):
         removals = [0,1,5,6,7,13,35,42,43,41,47,48]
@@ -192,21 +159,7 @@ class Qango7x7_plus_board(Board_game):
         print(out)
         return out
 
-    def get_blocked_squares(self,ruleset):
-        self.inv_maps()
-        threadblock = set()
-        block_depths = set([0])
-        if ruleset=="standard":
-            blocked_sq = []
-        elif ruleset=="rand":
-            blocked_sq = [4,5,6,9,10,11,12,13,16,17,18,19,20,23,24,25,26,27,30,31,32]
-        elif ruleset=="tournament":
-            allowed = [6,13,23,30]
-            blocked_sq = list(filter(lambda x:x not in allowed,range(self.squares)))
-        blocked_moves = set(self.node_map_rev[x] for x in blocked_sq)
-        return blocked_moves,block_depths,threadblock
-
 
 if __name__ == "__main__":
     q = Qango7x7_board()
-    print(len(q.winsquarenums))
+    print(q.winsquarenums)

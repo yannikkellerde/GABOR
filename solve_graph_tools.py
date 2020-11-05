@@ -189,11 +189,11 @@ class PN_search():
         del n[STORAGE]
         self.alive_graphs -= 1
 
-    def pn_search(self,onturn_proves=True,verbose=True,save=True,burgregel=2):
-        blocked,block_depths,threadblock = self.game.board.get_blocked_squares(burgregel)
+    def pn_search(self,onturn_proves=True,verbose=True,save=True,ruleset=2):
+        blocked = self.game.board.get_blocked_squares(ruleset)
         prove_color = self.game.onturn if onturn_proves else ("w" if self.game.onturn=="b" else "b")
-        self.prooffile = f"proofsets/{prove_color}_{self.game}_{burgregel}_p.pkl"
-        self.disprooffile=f"proofsets/{prove_color}_{self.game}_{burgregel}_d.pkl"
+        self.prooffile = f"proofsets/{prove_color}_{self.game}_{ruleset}_p.pkl"
+        self.disprooffile=f"proofsets/{prove_color}_{self.game}_{ruleset}_d.pkl"
         self.loadsets()
         self.game.hashme()
         hashval = self.game.hash
@@ -236,10 +236,7 @@ class PN_search():
             most_proving,depth = self.select_most_proving(self.root)
             times["select_most_proving"].append(time.perf_counter()-starts["select_most_proving"])
             starts["expand"] = time.perf_counter()
-            if depth in block_depths:
-                self.expand(most_proving,threat_search=depth not in threadblock,blocked_moves=blocked)
-            else:
-                self.expand(most_proving,threat_search=depth not in threadblock)
+            self.expand(most_proving,threat_search=True,blocked_moves=blocked if depth==0 else None)
             times["expand"].append(time.perf_counter()-starts["expand"])
             starts["update_anchestors"] = time.perf_counter()
             self.update_anchestors(most_proving)
@@ -258,7 +255,7 @@ class PN_search():
 
 if __name__ == "__main__":
     game = sys.argv[1]
-    burgregel = sys.argv[2]
+    ruleset = sys.argv[2]
     onturn_proves = not (len(sys.argv)>3 and sys.argv[3].lower()=="false")
     if game=="qango6x6":
         g = Qango6x6()
@@ -270,9 +267,9 @@ if __name__ == "__main__":
         g = Qango7x7_plus()
     elif game=="json":
         g = Json_game(os.path.join("json_games",sys.argv[2]+".json"))
-        burgregel = sys.argv[3]
+        ruleset = sys.argv[3]
         onturn_proves = not (len(sys.argv)>4 and sys.argv[4].lower()=="false")
     else:
         raise ValueError(f"Game not found {game}")
     pn_s = PN_search(g)
-    pn_s.pn_search(onturn_proves=onturn_proves,burgregel=burgregel)
+    pn_s.pn_search(onturn_proves=onturn_proves,ruleset=ruleset)
