@@ -8,6 +8,7 @@ board.style.top = (body_rect.height/2 - board_size/2)+"px";
 const tbody = board.children[0];
 for (var tr of tbody.children){
     tr.style.height = (board_size/Math.sqrt(num_squares)) + "px";
+    tr.style.fontSize = ((board_size/Math.sqrt(num_squares))*0.7) + "px";
     for (var td of tr.children){
         td.style.width = (board_size/Math.sqrt(num_squares)) + "px";
         td.style.height = "100%";

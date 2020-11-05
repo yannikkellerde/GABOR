@@ -15,11 +15,13 @@
     border-collapse: collapse;
     table-layout: fixed;
     z-index:5;
+    user-select:none;
 }
 
 #board td{
     text-align: center;
     cursor: pointer;
+    vertical-align: middle;
 }
 
 .moves {
@@ -267,4 +269,31 @@ aside{
 .letter_wrap{
     position:absolute;
     z-index:0;
+}
+#ruleset_stuff{
+    position: relative;
+    margin-top:100px;
+}
+.rad_holder{
+    margin: 10px;
+}
+.name{
+    border:none;
+    font-size:18px;
+    height:25px;
+    background-color:#09121a;
+    color:white;
+    margin:5px;
+}
+#console{
+    background-color:black;
+    position: relative;
+    width:80%;
+    height:400px;
+    color:#008000;
+    text-align:left;
+    overflow-y:scroll;
+}
+#solve_stuff{
+    margin-top:100px;
 }
