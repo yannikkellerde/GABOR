@@ -1,5 +1,6 @@
 from graph_tool.all import *
 import pickle
+import sys,os
 import math
 import time
 
@@ -15,10 +16,7 @@ class Board_game():
         self.onturn = "b"
         self.node_map = dict()
         self.wp_map = dict()
-        self.provenset_black = set()
-        self.disprovenset_black = set()
-        self.provenset_white = set()
-        self.disprovenset_white = set()
+        self.psets = {"bp":set(),"bd":set(),"wp":set(),"wd":set()}
     
     def inv_maps(self):
         self.wp_map_rev = {value:key for key,value in self.wp_map.items()}
@@ -39,19 +37,13 @@ class Board_game():
                     pos[sq] = owner
         return pos
 
-    def load_sets(self,provenfile_black=None,disprovenfile_black=None,provenfile_white=None,disprovenfile_white=None):
-        if provenfile_black is not None:
-            with open(provenfile_black,"rb") as f:
-                self.provenset_black = pickle.load(f)
-        if disprovenfile_black is not None:
-            with open(disprovenfile_black,"rb") as f:
-                self.disprovenset_black = pickle.load(f)
-        if provenfile_white is not None:
-            with open(provenfile_white,"rb") as f:
-                self.provenset_white = pickle.load(f)
-        if disprovenfile_white is not None:
-            with open(disprovenfile_white,"rb") as f:
-                self.disprovenset_white = pickle.load(f)
+    def load_set_folder(self,folder):
+        for setname in self.psets:
+            try:
+                with open(os.path.join(folder,setname+".pkl"),"rb") as f:
+                    self.psets[setname] = pickle.load(f)
+            except FileNotFoundError as e:
+                print(e)
 
     def check_move_val(self,moves,priorize_sets=True):
         winmoves = self.game.win_threat_search(one_is_enough=False,until_time=time.time()+5)
@@ -72,13 +64,13 @@ class Board_game():
             else:
                 self.game.make_move(move)
                 self.game.hashme()
-                if self.game.hash in self.provenset_white:
+                if self.game.hash in self.psets["wp"]:
                     val = -2
-                elif self.game.hash in self.provenset_black:
+                elif self.game.hash in self.psets["bp"]:
                     val = 2
-                elif self.game.hash in self.disprovenset_white:
+                elif self.game.hash in self.psets["wd"]:
                     val = 1
-                if self.game.hash in self.disprovenset_black:
+                if self.game.hash in self.psets["bd"]:
                     if val == 1:
                         val = 0
                     elif val =="u":

@@ -67,7 +67,13 @@ class Post_handler(SimpleHTTPRequestHandler):
                 self._set_headers()
                 self.wfile.write(json.dumps(game.board.rulesets).encode())
             if data["request"] == "aval_proofsets":
-
+                self._set_headers()
+                proofsets = os.listdir(os.path.join(base_path,"..","proofsets"))
+                self.wfile.write(json.dumps({"proofsets":proofsets,"default":game.name}).encode())
+        elif "set_proofset" in data:
+            game.board.load_set_folder(os.path.join(base_path,"../proofsets",data["set_proofset"]))
+            self._set_headers()
+            self.wfile.write(json.dumps({"changed_to":data["set_proofset"]}).encode())
         elif "position" in data:
             real_pos = [("f" if x==0 else ("b" if x==2 else "w")) for x in data["position"]]
             print(real_pos,game.board.position)
@@ -130,16 +136,7 @@ if __name__ == "__main__":
         start_arg = 3
     else:
         raise ValueError(f"Game not found {my_folder}")
-    try:
-        game.board.load_sets(provenfile_black=f"../proofsets/{game.name}/b_p.pkl",
-                             disprovenfile_black=f"../proofsets/{game.name}/b_d.pkl")
-    except FileNotFoundError as e:
-        print(e)
-    try:
-        game.board.load_sets(provenfile_white=f"../proofsets/{game.name}/w_p.pkl",
-                             disprovenfile_white=f"../proofsets/{game.name}/w_d.pkl")
-    except FileNotFoundError as e:
-        print(e)
+    game.board.load_set_folder(os.path.join(base_path,"..","proofsets",game.name))
     endgame_depth = 0
     open_browser()
     start_server()

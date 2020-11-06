@@ -28,10 +28,7 @@ class Ai_api():
                 print(e)
             for rule in rulesets:
                 g = game_map[game]()
-                g.board.disprovenset_black = dummy.board.disprovenset_black
-                g.board.disprovenset_white = dummy.board.disprovenset_white
-                g.board.provenset_black = dummy.board.provenset_black
-                g.board.provenset_white = dummy.board.provenset_white
+                g.board.psets = dummy.board.psets
                 rulemap[rule] = g
     
     def get_move(self,game,ruleset,color,position):

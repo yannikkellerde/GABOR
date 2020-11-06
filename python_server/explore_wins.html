@@ -371,6 +371,18 @@ function set_rulesets(rss){
     }
 }
 
+function set_aval_proofsets(data){
+    for (var ps of data["proofsets"]){
+        const opt = document.createElement("option");
+        opt.innerText = ps;
+        if (ps == data["default"]){
+            opt.setAttribute("selected", true);
+        }
+        document.getElementById("select_proofset").appendChild(opt);
+    }
+    document.getElementById("text_proofset").value = data["default"];
+}
+
 var position = new Array(num_squares).fill(0);
 var position_hist = [position];
 var hist_index = 0;
@@ -416,7 +428,14 @@ document.getElementById("choose_ruleset").addEventListener("change", function(e)
         block_squares(rulesets[cur_rule]);
     }
 })
+document.getElementById("select_proofset").addEventListener("change", e=>{
+    xml_http_post("board.html",{set_proofset:e.target.value},data=>{
+        document.getElementById("text_proofset").value = data["changed_to"];
+        show_moves();
+    });
+})
 xml_http_post("board.html",{request:"rulesets"},set_rulesets);
+xml_http_post("board.html",{request:"aval_proofsets"},set_aval_proofsets);
 </script>
 </body>
 </html>
