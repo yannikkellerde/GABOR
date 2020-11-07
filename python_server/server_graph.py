@@ -54,6 +54,14 @@ class Post_handler(SimpleHTTPRequestHandler):
         else:
             super().do_GET()
 
+    def create_proofset(self,new):
+        path = os.path.join(base_path,"..","proofsets",new)
+        if not os.path.exists(path):
+            os.mkdir(path)
+            for setname in game.board.psets:
+                with open(os.path.join(path,setname), 'wb') as f:
+                    pickle.dump(set(),f)
+
     def do_POST(self):
         # read the message and convert it into a python dictionary
         length = int(self.headers['Content-Length'])
@@ -70,6 +78,11 @@ class Post_handler(SimpleHTTPRequestHandler):
                 self._set_headers()
                 proofsets = os.listdir(os.path.join(base_path,"..","proofsets"))
                 self.wfile.write(json.dumps({"proofsets":proofsets,"default":game.name}).encode())
+        elif "new_proofset" in data:
+            create_proofset(data["new_proofset"])
+            proofsets = os.listdir(os.path.join(base_path,"..","proofsets"))
+            self._set_headers()
+            self.wfile.write(json.dumps({"proofsets":proofsets,"default":data["new_proofset"]}).encode())
         elif "set_proofset" in data:
             game.board.load_set_folder(os.path.join(base_path,"../proofsets",data["set_proofset"]))
             self._set_headers()

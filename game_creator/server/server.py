@@ -49,7 +49,7 @@ class Game_creator_handler():
         if "game" in data:
             with open(os.path.join(root_path,"../../json_games",data["game"]["name"]+".json"),"w") as f:
                 json.dump(data["game"],f)
-            path = os.path.join(root_path,"../../rulesets",data["game"]["name"]+".json"
+            path = os.path.join(root_path,"../../rulesets",data["game"]["name"]+".json")
             if not os.path.isfile(path):
                 with open(path,"w") as f:
                     json.dump({"default":[]},f)

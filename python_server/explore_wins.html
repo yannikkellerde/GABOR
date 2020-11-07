@@ -372,6 +372,7 @@ function set_rulesets(rss){
 }
 
 function set_aval_proofsets(data){
+    proofsets = data["proofsets"];
     for (var ps of data["proofsets"]){
         const opt = document.createElement("option");
         opt.innerText = ps;
@@ -392,6 +393,7 @@ var cur_rule = null;
 var squares = null;
 var blocked_squares = [];
 var mode = "play";
+var proofsets = [];
 
 if (show_moves_on_start){
     squares = get_squares();
@@ -434,6 +436,17 @@ document.getElementById("select_proofset").addEventListener("change", e=>{
         show_moves();
     });
 })
+document.getElementById("text_proofset").addEventListener("keydown",e=>{
+    if (e.key === "Enter" && !proofsets.includes(e.target.value)){
+        xml_http_post("board.html",{"new_proofsets":e.target.value},set_aval_proofsets)
+    }
+})
+/*function start_search(forcolor){
+    xml_http_post("board.html",{start_search:forcolor,blocked_squares=blocked_squares},data=>{
+        setInterval(xml_http_post("board.html",{request:}),10000)
+    })
+}*/
+document.getElementById("search_for_black").addEventListener("click",function)
 xml_http_post("board.html",{request:"rulesets"},set_rulesets);
 xml_http_post("board.html",{request:"aval_proofsets"},set_aval_proofsets);
 </script>
