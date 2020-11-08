@@ -1,15 +1,14 @@
-import sys
-sys.path.append("..")
-sys.path.append(".")
+import sys,os
+sys.path.append(os.path.join(os.path.dirname(__file__),".."))
+sys.path.append(os.path.dirname(__file__))
+print(sys.path)
 from graph_tools_games import Tic_tac_toe, Qango6x6, Qango7x7, Qango7x7_plus, Json_game
 import math
 import pickle
 import json
+from collections import defaultdict
+from flask import render_template
 
-import cgi
-import threading
-import webbrowser
-from http.server import HTTPServer,SimpleHTTPRequestHandler
 from functools import reduce
 import os
 
@@ -18,75 +17,67 @@ base_path = os.path.abspath(os.path.dirname(__file__))
 FILE = "python_server/explore_wins.html"
 PORT = 8081
 
-class Post_handler(SimpleHTTPRequestHandler):
+class Solver_analyze():
+    def __init__(self):
+        self.session_to_game = {}
+        self.game_name_to_sessions = defaultdict(set)
+        self.session_to_proofsets = {}
+        self.proofsets_with_sessions = defaultdict(set)
+        self.game_name_to_game = {}
 
-    def _set_headers(self):
-        self.send_response(200)
-        self.send_header('Content-type', 'application/json')
-        self.end_headers()
+    def get_proofsets()
 
-    def do_GET(self):
-        if self.path.endswith("explore_wins.html"):
-            self.send_response(200)
+    def get_game(self,game_name,uid):
+        if not (uid in self.session_to_game and game_name_to_game[game_name] == self.session_to_game[uid]):
+            if game_name not in self.game_name_to_game:
+                if "qango6x6"==game_name:
+                    game = Qango6x6()
+                elif "qango7x7"==my_folder:
+                    game = Qango7x7()
+                elif "tic_tac_toe"==my_folder:
+                    game = Tic_tac_toe()
+                elif my_folder == "qango7x7_plus":
+                    game = Qango7x7_plus()
+                elif my_folder == "json":
+                    game = Json_game(os.path.join(base_path,"../json_games",sys.argv[2]+".json"))
+                self.game_name_to_game[game_name] = game
+            self.session_to_game[uid] = self.game_name_to_game[game_name]
+                self.game_name_to_sessions[game_name].add(uid)
+        return self.session_to_game[uid]
 
-            # Setting the header
-            self.send_header("Content-type", "text/html")
-
-            # Whenever using 'send_header', you also have to call 'end_headers'
-            self.end_headers()
-            with open("explore_wins.html","r") as f:
-                my_content = f.read()
-            with open(os.path.join(my_folder,"board.html"),"r") as f:
-                my_board = f.read()
-            with open(os.path.join(my_folder,"game.js"),"r") as f:
-                my_js = f.read()
-            my_content = (my_content.split("<!--Insert board here-->")[0] +
-                        my_board +
-                        my_content.split("<!--Insert board here-->")[1]
-            )
-            my_content = (my_content.split("<!--Insert link to stylesheet here-->")[0] +
-                         '<link rel="stylesheet" href="/'+os.path.join(my_folder,"board.css")+'">' +
-                          my_content.split("<!--Insert link to stylesheet here-->")[1])
-            my_content = (my_content.split("<!--Insert path to gamescript here-->")[0] +
-                        "<script>"+my_js+"</script>" +
-                        my_content.split("<!--Insert path to gamescript here-->")[1])
-            self.wfile.write(my_content.encode())
-        else:
-            super().do_GET()
+    def do_GET(self,game_name):
+        with open(os.path.join(base_path,game_name,"board.html"),"r") as f:
+            my_board = f.read()
+        return render_template(os.path.join("explore_wins.html"),board = my_board, stylesheet=os.path.join("/static_analyzer",game_name,"board.css"),
+                               game_js_path=os.path.join("/static_analyzer",game_name,"game.js"))
 
     def create_proofset(self,new):
         path = os.path.join(base_path,"..","proofsets",new)
         if not os.path.exists(path):
             os.mkdir(path)
             for setname in game.board.psets:
-                with open(os.path.join(path,setname), 'wb') as f:
+                with open(os.path.join(path,setname+".pkl"), 'wb') as f:
                     pickle.dump(set(),f)
 
-    def do_POST(self):
+    def do_POST(self,data,uid):
         # read the message and convert it into a python dictionary
-        length = int(self.headers['Content-Length'])
-        data_str = self.rfile.read(length)
-        data = json.loads(data_str)
+        out = json.dumps({"error":"NOT FOUND"})
         if "request" in data:
             if data["request"] == "config":
-                self._set_headers()
-                self.wfile.write(json.dumps(game.config).encode())
+                out = json.dumps(game.config)
             if data["request"] == "rulesets":
-                self._set_headers()
-                self.wfile.write(json.dumps(game.board.rulesets).encode())
+                out = json.dumps(game.board.rulesets)
             if data["request"] == "aval_proofsets":
-                self._set_headers()
                 proofsets = os.listdir(os.path.join(base_path,"..","proofsets"))
-                self.wfile.write(json.dumps({"proofsets":proofsets,"default":game.name}).encode())
+                out = json.dumps({"proofsets":proofsets,"default":game.name})
         elif "new_proofset" in data:
-            create_proofset(data["new_proofset"])
+            self.create_proofset(data["new_proofset"])
             proofsets = os.listdir(os.path.join(base_path,"..","proofsets"))
-            self._set_headers()
-            self.wfile.write(json.dumps({"proofsets":proofsets,"default":data["new_proofset"]}).encode())
+            game.board.load_set_folder(os.path.join(base_path,"../proofsets",data["new_proofset"]))
+            out = json.dumps({"proofsets":proofsets,"default":data["new_proofset"],"changed_to":data["new_proofset"]})
         elif "set_proofset" in data:
             game.board.load_set_folder(os.path.join(base_path,"../proofsets",data["set_proofset"]))
-            self._set_headers()
-            self.wfile.write(json.dumps({"changed_to":data["set_proofset"]}).encode())
+            out = json.dumps({"changed_to":data["set_proofset"]})
         elif "position" in data:
             real_pos = [("f" if x==0 else ("b" if x==2 else "w")) for x in data["position"]]
             print(real_pos,game.board.position)
@@ -99,20 +90,19 @@ class Post_handler(SimpleHTTPRequestHandler):
             evals = game.board.check_move_val(moves)
             moves_with_eval = list(zip(board_moves, evals))
             # send the message back
-            self._set_headers()
-            self.wfile.write(json.dumps({"moves":moves_with_eval}).encode())
+            out = json.dumps({"moves":moves_with_eval})
         elif "new_rule" in data:
             game.board.rulesets[data["new_rule"]] = data["blocked"]
             with open(os.path.join(base_path,"../rulesets",game.name+".json"),"w") as f:
                 json.dump(game.board.rulesets,f)
-            self._set_headers()
-            self.wfile.write(json.dumps(game.board.rulesets).encode())
+            out = json.dumps(game.board.rulesets)
         elif "del_rule" in data:
-            del game.board.rulesets[data["del_rule"]]
-            with open(os.path.join(base_path,"../rulesets",game.name+".json"),"w") as f:
-                json.dump(game.board.rulesets,f)
-            self._set_headers()
-            self.wfile.write(json.dumps(game.board.rulesets).encode())
+            if (len(game.board.rulesets)>1):
+                del game.board.rulesets[data["del_rule"]]
+                with open(os.path.join(base_path,"../rulesets",game.name+".json"),"w") as f:
+                    json.dump(game.board.rulesets,f)
+            out = json.dumps(game.board.rulesets)
+        return out
 
 def open_browser():
     """Start a browser after waiting for half a second."""

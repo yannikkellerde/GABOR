@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link rel="stylesheet" href="../styles/explore_results.css">
-    <link rel="stylesheet" href="../styles/general_stuff.css">
-    <!--Insert link to stylesheet here-->
+    <link rel="stylesheet" href="/static_analyzer/styles/explore_results.css">
+    <link rel="stylesheet" href="/static_analyzer/styles/general_stuff.css">
+    <link rel="stylesheet" href="{{stylesheet}}">
     <meta charset="utf-8"/>
 </head>
 
@@ -35,7 +35,7 @@
         <div id="console"></div>
     </div>
 </aside>
-<!--Insert board here-->
+{{board|safe}}
 <div id="main-wrap">
     <div class="analyse__tools">
         <section class="explorer-box sub-box">
@@ -60,9 +60,8 @@
         <button class="w3-button w3-large w3-black disabled" id="go_end" onclick="go_end()">&raquo;</button>
     </div>
 </div>
-<script>var show_moves_on_start = true;</script>
-<!--Insert path to gamescript here-->
-<script>
+<script type="module">
+import { load_game, move_int_to_str, get_squares} from '{{game_js_path}}';
 
 function letter_board(){
     const w = 50;
@@ -133,8 +132,9 @@ function set_button_activation(){
 }
 
 function xml_http_post(url, data, callback) {
-    req = new XMLHttpRequest();
+    const req = new XMLHttpRequest();
     req.open("POST", url, true);
+    req.setRequestHeader("Content-Type", "application/json");
     req.onreadystatechange = function() {
         if (this.readyState == 4) {
             callback(JSON.parse(this.responseText));
@@ -221,7 +221,7 @@ function player_move(move){
             real_move(move);
         }
     }
-    else if (mode=="sel_block"){
+    else if (mode=="sel_block"&&position[move]==0){
         if (blocked_squares.includes(move)){
             unblock_square(move);
         }
@@ -265,24 +265,27 @@ function show_pos(){
 }
 
 function move_forward(){
-    if (hist_index==position_hist.length-1){return}
+    if (hist_index==position_hist.length-1){return false}
     hist_index++;
     position = position_hist[hist_index].slice()
     onturn = onturn==1?2:1;
     blocked_squares = [];
     hide_blocked();
     set_button_activation();
+    return true;
 }
 
 function go_forward(){
-    move_forward();
-    show_moves();
-    set_disablility();
-    show_pos();
+    if (move_forward()){
+        show_moves();
+        set_disablility();
+        show_pos();
+    }
 }
 
 function go_end(){
-    while (hist_index!=tree_move.length-1){
+    if (hist_index==position_hist.length-1){return}
+    while (hist_index!=position_hist.length-1){
         move_forward();
     }
     show_moves();
@@ -291,27 +294,30 @@ function go_end(){
 }
 
 function move_back(){
-    if (hist_index==0){return}
+    if (hist_index==0){return false}
     hist_index--;
     onturn = onturn==1?2:1;
     position = position_hist[hist_index].slice();
     blocked_squares = [];
     hide_blocked();
     set_button_activation();
+    return true;
 }
 
 function go_back(){
-    move_back();
-    show_moves();
-    set_disablility();
-    show_pos();
-    var depth = get_depth();
-    if (depth==0){
-        block_squares(rulesets[cur_rule]);
+    if (move_back()){
+        show_moves();
+        set_disablility();
+        show_pos();
+        var depth = get_depth();
+        if (depth==0){
+            block_squares(rulesets[cur_rule]);
+        }
     }
 }
 
 function go_start(){
+    if (hist_index==0){return}
     while (hist_index!=0){
         move_back()
     }
@@ -326,7 +332,7 @@ function go_start(){
 
 function unblock_squares(){
     for (var i=0;i<squares.length;i++){
-        if (squares[i].innerHTML=="&#10060;" || squares[i].innerHTML=="❌"){
+        if (squares[i].innerHTML.includes("img")){
             squares[i].innerHTML = "";
         }
     }
@@ -345,7 +351,7 @@ function unblock_square(sq){
 
 function block_squares(sq_nums){
     sq_nums.forEach(function(sq_num){
-        squares[sq_num].innerHTML = "&#10060;";
+        squares[sq_num].innerHTML = "<img src='../images/redX.svg' class='redX'/>";
         if (!blocked_squares.includes(sq_num)){
             blocked_squares.push(sq_num);
         }
@@ -373,6 +379,7 @@ function set_rulesets(rss){
 
 function set_aval_proofsets(data){
     proofsets = data["proofsets"];
+    document.getElementById("select_proofset").innerHTML = "";
     for (var ps of data["proofsets"]){
         const opt = document.createElement("option");
         opt.innerText = ps;
@@ -382,6 +389,15 @@ function set_aval_proofsets(data){
         document.getElementById("select_proofset").appendChild(opt);
     }
     document.getElementById("text_proofset").value = data["default"];
+}
+
+const vals = load_game();
+const num_squares = vals[0];
+if (vals[1]){
+    squares = get_squares();
+    reset();
+    show_moves();
+    letter_board();
 }
 
 var position = new Array(num_squares).fill(0);
@@ -395,14 +411,6 @@ var blocked_squares = [];
 var mode = "play";
 var proofsets = [];
 
-if (show_moves_on_start){
-    squares = get_squares();
-}
-reset();
-if (show_moves_on_start){
-    show_moves();
-    letter_board();
-}
 document.getElementById("play_moves").addEventListener("click", function(e){
     mode = "play";
 });
@@ -414,13 +422,13 @@ document.getElementById("add_ruleset").addEventListener("click", function(e){
     var rulename = document.getElementById("rulename").value;
     var depth = get_depth();
     if (depth == 0 && rulename.length>0){
-        xml_http_post("board.html",{"new_rule":rulename,"blocked":blocked_squares},set_rulesets);
+        xml_http_post("explore_wins",{"new_rule":rulename,"blocked":blocked_squares},set_rulesets);
     }
 });
 document.getElementById("remove_ruleset").addEventListener("click",function(e){
     var depth = get_depth();
     if (depth==0){
-        xml_http_post("board.html",{"del_rule":cur_rule},set_rulesets);
+        xml_http_post("explore_wins",{"del_rule":cur_rule},set_rulesets);
     }
 });
 document.getElementById("choose_ruleset").addEventListener("change", function(e){
@@ -431,24 +439,28 @@ document.getElementById("choose_ruleset").addEventListener("change", function(e)
     }
 })
 document.getElementById("select_proofset").addEventListener("change", e=>{
-    xml_http_post("board.html",{set_proofset:e.target.value},data=>{
+    xml_http_post("explore_wins",{set_proofset:e.target.value},data=>{
         document.getElementById("text_proofset").value = data["changed_to"];
         show_moves();
     });
 })
 document.getElementById("text_proofset").addEventListener("keydown",e=>{
     if (e.key === "Enter" && !proofsets.includes(e.target.value)){
-        xml_http_post("board.html",{"new_proofsets":e.target.value},set_aval_proofsets)
+        xml_http_post("explore_wins",{"new_proofset":e.target.value},data=>{
+            set_aval_proofsets(data);
+            document.getElementById("text_proofset").value = data["changed_to"];
+            show_moves();
+        })
     }
 })
 /*function start_search(forcolor){
-    xml_http_post("board.html",{start_search:forcolor,blocked_squares=blocked_squares},data=>{
-        setInterval(xml_http_post("board.html",{request:}),10000)
+    xml_http_post("explore_wins",{start_search:forcolor,blocked_squares=blocked_squares},data=>{
+        setInterval(xml_http_post("explore_wins",{request:}),10000)
     })
 }*/
-document.getElementById("search_for_black").addEventListener("click",function)
-xml_http_post("board.html",{request:"rulesets"},set_rulesets);
-xml_http_post("board.html",{request:"aval_proofsets"},set_aval_proofsets);
+document.getElementById("search_for_black").addEventListener("click",function(){});
+xml_http_post("explore_wins",{request:"rulesets"},set_rulesets);
+xml_http_post("explore_wins",{request:"aval_proofsets"},set_aval_proofsets);
 </script>
 </body>
 </html>

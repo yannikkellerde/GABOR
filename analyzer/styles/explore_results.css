@@ -297,3 +297,9 @@ aside{
 #solve_stuff{
     margin-top:100px;
 }
+.redX{
+    width:80%;
+    height: 80%;
+    user-select:none;
+    pointer-events: none;
+}

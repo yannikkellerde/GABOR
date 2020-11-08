@@ -11,8 +11,7 @@
 }
 .stone{
     width:80%;
-    height:80%;
-    top:10%;
+    height: 80%;
     border-radius: 50%;
     display: inline-block;
     position: relative;
