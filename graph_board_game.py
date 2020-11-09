@@ -38,12 +38,18 @@ class Board_game():
         return pos
 
     def load_set_folder(self,folder):
-        for setname in self.psets:
+        self.psets = Board_game.load_psets(self.psets.keys(),folder)
+
+    @staticmethod
+    def load_psets(setnames,folder):
+        psets = {setname:set() for setname in setnames}
+        for key in psets:
             try:
-                with open(os.path.join(folder,setname+".pkl"),"rb") as f:
-                    self.psets[setname] = pickle.load(f)
+                with open(os.path.join(folder,key+".pkl"),"rb") as f:
+                    psets[key] = pickle.load(f)
             except FileNotFoundError as e:
                 print(e)
+        return psets
 
     def check_move_val(self,moves,priorize_sets=True):
         winmoves = self.game.win_threat_search(one_is_enough=False,until_time=time.time()+5)
@@ -52,7 +58,6 @@ class Board_game():
         self.game.view.gp["b"] = not self.game.view.gp["b"]
         results = []
         storage = self.game.extract_storage()
-        print(defense_vertices,has_threat)
         for move in moves:
             val = "u"
             self.game.load_storage(storage)

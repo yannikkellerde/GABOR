@@ -1,14 +1,17 @@
 import math
 from util import resources_avaliable,draw_pn_tree
-import gc
 import pickle
 import os,sys
-from graph_tools_games import Tic_tac_toe,Qango6x6,Qango7x7,Qango7x7_plus,Json_game
+from graph_tools_games import instanz_by_name
 from graph_tools_game import Graph_game
 from data_magic import save_sets
 from graph_tool.all import *
 import numpy as np
 import time
+from typing import Callable
+from threading import Thread, Event
+import json
+from flask_socketio import emit, send
 
 # Node storage for memory efficency in lists
 PN = 0 # int
@@ -21,7 +24,7 @@ STORAGE = 6 # A tuple containing 1. an owner map, 2. a filter map, 3. onturn boo
 
 
 class PN_search():
-    def __init__(self, game:Graph_game, drawproves=False):
+    def __init__(self, game:Graph_game, callback:Callable, save_callback:Callable, drawproves=False):
         self.game = game
         self.ttable = {}
         self.provenset = set()
@@ -30,19 +33,11 @@ class PN_search():
         self.alive_graphs = 0
         self.proofadds = [0,0]
         self.drawproves = drawproves
-
-    def loadsets(self):
-        os.makedirs(os.path.dirname(self.prooffile),exist_ok=True)
-        try:
-            with open(self.prooffile,"rb") as file:
-                self.provenset = pickle.load(file)
-        except Exception as e:
-            print(e)
-        try:
-            with open(self.disprooffile,"rb") as file:
-                self.disprovenset = pickle.load(file)
-        except Exception as e:
-            print(e)
+        self.callback = callback
+        self.callback_it = 100
+        self.save_callback = save_callback
+        self.save_it = 10000
+        self.runtime_start = time.time()
     
     def set_pn_dn(self, n):
         if n[PN] == 0 or n[DN] == 0:
@@ -192,9 +187,6 @@ class PN_search():
     def pn_search(self,onturn_proves=True,verbose=True,save=True,ruleset=2):
         blocked = self.game.board.get_blocked_squares(ruleset)
         prove_color = self.game.onturn if onturn_proves else ("w" if self.game.onturn=="b" else "b")
-        self.prooffile = f"proofsets/{prove_color}_{self.game}_{ruleset}_p.pkl"
-        self.disprooffile=f"proofsets/{prove_color}_{self.game}_{ruleset}_d.pkl"
-        self.loadsets()
         self.game.hashme()
         hashval = self.game.hash
         self.root = [1,1,hashval,[],[],onturn_proves,self.game.extract_storage()]
@@ -206,70 +198,67 @@ class PN_search():
         starts = {}
         while self.root[PN]!=0 and self.root[DN]!=0:
             if verbose:
-                if c % 100 == 1:
-                    print("iteration:",c)
-                    print("node_count:",self.node_count)
-                    print("graphs:",self.alive_graphs)
-                    for key,value in times.items():
-                        print(key,np.mean(value))
+                if c % self.callback_it == 1:
+                    data = {}
+                    data["iteration"] = c
+                    data["node_count"] = self.node_count
+                    data["alive_graphs"] = self.alive_graphs
+                    data["runtime"] = time.time()-self.runtime_start
                     cur = self.root
                     depth = 0
                     while len(cur[CHILDREN]) == 1:
                         cur = cur[CHILDREN][0]
                         depth += 1
-                    print("depth:",depth)
-                    print(" ".join([str(x[PN]) for x in cur[CHILDREN]]))
-                    print(" ".join([str(x[DN]) for x in cur[CHILDREN]]))
-                    if c % 1000000 == 0:
-                        gc.collect()
-                    print("Proofadds: {}".format(self.proofadds))
-                    if not resources_avaliable():
+                    data["depth"] = depth
+                    data["PNs"] = [x[PN] for x in cur[CHILDREN]]
+                    data["DNs"] = [x[DN] for x in cur[CHILDREN]]
+                    data["proofadds"] = self.proofadds
+                    data["recently_saved"] = c%self.save_it==1
+                    if not self.callback(data) or not resources_avaliable():
                         return False
-                    times = {"select_most_proving":[],"expand":[],"update_anchestors":[],"whole_it":[]}
             if save:
-                if c%10000==0:
-                    save_sets((self.provenset,self.prooffile),(self.disprovenset,self.disprooffile))
-                    draw_pn_tree(self.root,2)
-            starts["whole_it"] = time.perf_counter()
+                if c%self.save_it==0:
+                    self.save_callback(self.provenset,self.disprovenset)
             c+=1
-            starts["select_most_proving"] = time.perf_counter()
             most_proving,depth = self.select_most_proving(self.root)
-            times["select_most_proving"].append(time.perf_counter()-starts["select_most_proving"])
-            starts["expand"] = time.perf_counter()
             self.expand(most_proving,threat_search=True,blocked_moves=blocked if depth==0 else None)
-            times["expand"].append(time.perf_counter()-starts["expand"])
-            starts["update_anchestors"] = time.perf_counter()
             self.update_anchestors(most_proving)
-            times["update_anchestors"].append(time.perf_counter()-starts["update_anchestors"])
-            times["whole_it"].append(time.perf_counter()-starts["whole_it"])
-        if verbose:
-            print("iteration:",c)
-            print("node_count:",self.node_count)
-            print("graphs:",self.alive_graphs)
-            print("Proofadds: {}".format(self.proofadds))
-            print(self.root[PN], self.root[DN], self.node_count)
         if save:
-            save_sets((self.provenset,self.prooffile),(self.disprovenset,self.disprooffile))
+            self.callback({"solved":{"proofadds":self.proofadds,"PN":self.root[PN], "DN":self.root[DN], "runtime":time.time()-self.runtime_start}})
+            self.save_callback(self.provenset,self.disprovenset)
         return True
 
+thread_stop_event = Event()
 
-if __name__ == "__main__":
-    game = sys.argv[1]
-    ruleset = sys.argv[2]
-    onturn_proves = not (len(sys.argv)>3 and sys.argv[3].lower()=="false")
-    if game=="qango6x6":
-        g = Qango6x6()
-    elif game=="qango7x7":
-        g = Qango7x7()
-    elif game=="tic_tac_toe":
-        g = Tic_tac_toe()
-    elif game=="qango7x7_plus":
-        g = Qango7x7_plus()
-    elif game=="json":
-        g = Json_game(os.path.join("json_games",sys.argv[2]+".json"))
-        ruleset = sys.argv[3]
-        onturn_proves = not (len(sys.argv)>4 and sys.argv[4].lower()=="false")
-    else:
-        raise ValueError(f"Game not found {game}")
-    pn_s = PN_search(g)
-    pn_s.pn_search(onturn_proves=onturn_proves,ruleset=ruleset)
+class Solver_thread(Thread):
+    def __init__(self,color,sid,room,game_name,position,onturn,blocked,psets,store_proofsets_callback,socketio):
+        super(Solver_thread, self).__init__()
+        self.sid = sid
+        self.room = room
+        self.color = color
+        self.position = [("f" if x==0 else ("b" if x==2 else "w")) for x in position]
+        self.onturn = onturn
+        self.game_name = game_name
+        self.blocked = blocked
+        self.psets = psets
+        self.store_proofsets_callback = store_proofsets_callback
+        self.socketio = socketio
+        thread_stop_event.clear()
+
+    def my_callback(self,data):
+        if thread_stop_event.isSet():
+            return False
+        else:
+            self.socketio.emit("solve_state",json.dumps(data),room=self.room)
+            return True
+
+    def run(self):
+        game = instanz_by_name(self.game_name)
+        game.board.set_position(self.position,self.onturn)
+        game.board.psets = self.psets
+        game.board.rulesets["temp_rules"] = self.blocked
+        pn_s = PN_search(game,self.my_callback,self.store_proofsets_callback)
+        pn_s.provenset = game.board.psets[self.color+"p"]
+        pn_s.disprovenset = game.board.psets[self.color+"d"]
+        res = pn_s.pn_search(onturn_proves=self.color==game.onturn,ruleset="temp_rules")
+        print("PN search with status",res)

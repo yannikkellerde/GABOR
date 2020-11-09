@@ -159,6 +159,16 @@ class Qango7x7_plus_board(Board_game):
         print(out)
         return out
 
+def instanz_by_name(game_name) -> Graph_game:
+    if "qango6x6"==game_name:
+        game = Qango6x6()
+    elif "qango7x7"==game_name:
+        game = Qango7x7()
+    elif game_name == "qango7x7_plus":
+        game = Qango7x7_plus()
+    else:
+        game = Json_game(os.path.join(base_path,"json_games",game_name+".json"))
+    return game
 
 if __name__ == "__main__":
     q = Qango7x7_board()

@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <title>Game solver</title>
     <link rel="stylesheet" href="/static_analyzer/styles/explore_results.css">
     <link rel="stylesheet" href="/static_analyzer/styles/general_stuff.css">
     <link rel="stylesheet" href="{{stylesheet}}">
@@ -54,18 +55,24 @@
         </section>
     </div>
     <div class="jumps">
-        <button class="w3-button w3-large w3-black disabled" id="go_start" onclick="go_start()">&laquo;</button>
-        <button class="w3-button w3-large w3-black disabled" id="go_back" onclick="go_back()">‹</button>
-        <button class="w3-button w3-large w3-black disabled" id="go_forward" onclick="go_forward()">›</button>
-        <button class="w3-button w3-large w3-black disabled" id="go_end" onclick="go_end()">&raquo;</button>
+        <button class="w3-button w3-large w3-black disabled" id="go_start">&laquo;</button>
+        <button class="w3-button w3-large w3-black disabled" id="go_back">‹</button>
+        <button class="w3-button w3-large w3-black disabled" id="go_forward">›</button>
+        <button class="w3-button w3-large w3-black disabled" id="go_end">&raquo;</button>
     </div>
 </div>
+<script src="/static/js/socket.io.js"></script>
 <script type="module">
-import { load_game, move_int_to_str, get_squares} from '{{game_js_path}}';
+document.getElementById("go_back").addEventListener("click",go_back);
+document.getElementById("go_forward").addEventListener("click",go_forward);
+document.getElementById("go_end").addEventListener("click",go_end);
+document.getElementById("go_start").addEventListener("click",go_start);
+
+import { load_game, move_int_to_str, get_squares, my_post} from '{{game_js_path}}';
 
 function letter_board(){
     const w = 50;
-    const letters = "ABCDEFGHJKLMNOPQRSTUVWXYZ"
+    const letters = "ABCDEFGHJKLMNOPQRSTUVWXYZ";
     const board = document.getElementById("board");
     const tbody = board.children[0];
     const rows = tbody.children.length;
@@ -90,8 +97,8 @@ function letter_board(){
     for (let i = 0; i < rows; i++) {
         var adiv = document.createElement("div");
         adiv.innerText = i+1;
-        adiv.style.height = ((board_rect.width/rows))+"px";
-        adiv.style.top = (w+(board_rect.width/rows)*i)+"px";
+        adiv.style.height = ((board_rect.height/rows))+"px";
+        adiv.style.top = (w+(board_rect.height/rows)*i)+"px";
         adiv.style.width = w+"px";
         adiv.style.left = 0;
         adiv.className = "letdiv";
@@ -151,7 +158,6 @@ function show_moves(){
     }
     document.getElementById("table_data").innerHTML="";
     function have_moves_to_show(server_data){
-        console.log(server_data)
         var miteval = [];
         //curval = server_data.moves[0][1]
         miteval = server_data.moves.slice()
@@ -169,12 +175,20 @@ function show_moves(){
             tr.appendChild(move_elem);
             tr.appendChild(eval_elem);
             tr.setAttribute("data-move",move);
-            tr.setAttribute("onclick","real_move("+move+")")
+            tr.addEventListener("click",e=>{
+                if (e.target.getAttribute("data-move")==null){
+                    var move = e.target.parentNode.getAttribute("data-move");
+                }
+                else{
+                    var move = e.target.getAttribute("data-move");
+                }
+                real_move(Number(move));
+            });
             document.getElementById("table_data").appendChild(tr);
         }
         hide_blocked();
     }
-    my_data = {"position":position,"onturn":onturn-1}
+    const my_data = {"position":position,"onturn":onturn-1}
     xml_http_post("python_server/explore_wins.html",my_data,have_moves_to_show)
 }
 
@@ -245,13 +259,20 @@ function reset(){
     position = new Array(num_squares).fill(0);
     onturn = 2;
     for (var i=0;i<squares.length;i++){
-        squares[i].setAttribute("onclick", "player_move("+i+")");
+        squares[i].setAttribute("data-num",i)
+        squares[i].addEventListener("click",e=>{
+            var move = e.target.getAttribute("data-num");
+            if (move == null){
+                var move = e.target.parentNode.getAttribute("data-num");
+            }
+            player_move(Number(move));
+        })
     }
 }
 
 function show_pos(){
-    for (i=0;i<squares.length;i++){
-        td = squares[i];
+    for (var i=0;i<squares.length;i++){
+        var td = squares[i];
         if (position[i] == 0){
             td.innerHTML = ""
         }
@@ -351,7 +372,7 @@ function unblock_square(sq){
 
 function block_squares(sq_nums){
     sq_nums.forEach(function(sq_num){
-        squares[sq_num].innerHTML = "<img src='../images/redX.svg' class='redX'/>";
+        squares[sq_num].innerHTML = "<img src='/static_analyzer/images/redX.svg' class='redX'/>";
         if (!blocked_squares.includes(sq_num)){
             blocked_squares.push(sq_num);
         }
@@ -362,6 +383,9 @@ function block_squares(sq_nums){
 function set_rulesets(rss){
     rulesets = rss;
     const sel = document.getElementById("choose_ruleset");
+    if (squares == null){
+        squares = get_squares();
+    }
     unblock_squares();
     sel.innerHTML = "";
     var first = true;
@@ -389,16 +413,13 @@ function set_aval_proofsets(data){
         document.getElementById("select_proofset").appendChild(opt);
     }
     document.getElementById("text_proofset").value = data["default"];
+    if (num_squares!=0){
+        show_moves();
+    }
 }
 
 const vals = load_game();
-const num_squares = vals[0];
-if (vals[1]){
-    squares = get_squares();
-    reset();
-    show_moves();
-    letter_board();
-}
+var num_squares = vals[0];
 
 var position = new Array(num_squares).fill(0);
 var position_hist = [position];
@@ -407,16 +428,36 @@ var onturn = 2;
 var rulesets = [];
 var cur_rule = null;
 var squares = null;
+var socket = null;
+var runningsolve = false;
 var blocked_squares = [];
 var mode = "play";
 var proofsets = [];
+const console_el = document.getElementById("console");
+
+if (vals[1]){
+    squares = get_squares();
+    reset();
+    letter_board();
+}
+else{
+    xml_http_post("explore_wins.html",{"request":"config"},data=>{
+        var res = my_post(data);
+        num_squares = res[0];
+        squares = res[1];
+        position = res[2];
+        position_hist = res[3];
+        reset();
+        show_moves();
+        letter_board();
+    })
+}
 
 document.getElementById("play_moves").addEventListener("click", function(e){
     mode = "play";
 });
 document.getElementById("sel_block").addEventListener("click", function(e){
     mode = "sel_block";
-    console.log(mode);
 });
 document.getElementById("add_ruleset").addEventListener("click", function(e){
     var rulename = document.getElementById("rulename").value;
@@ -453,12 +494,52 @@ document.getElementById("text_proofset").addEventListener("keydown",e=>{
         })
     }
 })
-/*function start_search(forcolor){
-    xml_http_post("explore_wins",{start_search:forcolor,blocked_squares=blocked_squares},data=>{
-        setInterval(xml_http_post("explore_wins",{request:}),10000)
-    })
-}*/
-document.getElementById("search_for_black").addEventListener("click",function(){});
+function start_search(forcolor){
+    if (runningsolve){
+        return
+    }
+    if (socket==null){
+        socket = io();
+    }
+    var loc_split = location.href.split("/")
+    socket.on('connect', function() {
+        if (!runningsolve){
+            socket.emit('start_search', {"color":forcolor,"blocked_sq":blocked_squares,"game_name":loc_split[loc_split.length-1],
+                                         "pset_name":document.getElementById("text_proofset").value,"position":position,"onturn":onturn});
+            runningsolve = true;
+        }
+    });
+    socket.on('solve_state',function(data){
+        data = data.replace("Infinity",'"Infinity"')
+        data = JSON.parse(data);
+        if ("solved" in data){
+            data = data.solved;
+            console_el.innerHTML = `GAME SOLVED <br/> Root Proof-Number: ${data["PN"]}.<br/> Root Disproof-Number: ${data["DN"]}.<br/>
+                                Total Runtime ${data["runtime"]}`
+            show_moves();
+            socket.disconnect();
+            socket = null;
+            runningsolve = false;
+        }
+        else{
+            console_el.innerHTML = `Iteration ${data["iteration"]}, ${data["runtime"]} seconds running:<br/>
+                                ${data["node_count"]} nodes created. ${data["alive_graphs"]} graphs stored in memory.<br/>
+                                ${data["proofadds"][0]} new positions proven. ${data["proofadds"][1]} new positions disproven <br/>
+                                only one variation until depth ${data["depth"]}. <br/>Proofnumbers afterwards:<br/>
+                                ${data["PNs"].join(" ")}<br/>Disproof numbers:<br/>${data["DNs"].join(" ")}`
+            if (data["recently_saved"]){
+                show_moves();
+            }
+        }
+    });
+    socket.on('disconnected', function() {
+        socket.disconnect();
+        socket = null;
+        runningsolve = false;
+    });
+}
+document.getElementById("search_for_black").addEventListener("click",function(){start_search("b")});
+document.getElementById("search_for_white").addEventListener("click",function(){start_search("w")});
 xml_http_post("explore_wins",{request:"rulesets"},set_rulesets);
 xml_http_post("explore_wins",{request:"aval_proofsets"},set_aval_proofsets);
 </script>

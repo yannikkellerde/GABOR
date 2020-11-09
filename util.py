@@ -80,3 +80,11 @@ def resources_avaliable():
     if memory.percent > 97:
         return False
     return True
+
+room_num = 0
+def provide_room_num():
+    global room_num
+    room_num+=1
+    if room_num > 1e7:
+        room_num = 0
+    return room_num

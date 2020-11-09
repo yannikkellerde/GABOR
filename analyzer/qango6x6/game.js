@@ -14,7 +14,7 @@ export function load_game(){
             td.style.height = "100%";
         }
     }
-    return num_squares,true;
+    return [num_squares,true];
 }
 
 export function move_int_to_str(int_move){

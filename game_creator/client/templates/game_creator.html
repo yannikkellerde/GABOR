@@ -1,8 +1,8 @@
 <head>
     <title>Game creator</title>
-    <link rel="stylesheet" href="styles/game_creator.css">
-    <link rel="stylesheet" href="styles/slider.css">
-    <link rel="stylesheet" href="styles/buttons.css">
+    <link rel="stylesheet" href="/static_creator/styles/game_creator.css">
+    <link rel="stylesheet" href="/static_creator/styles/slider.css">
+    <link rel="stylesheet" href="/static_creator/styles/buttons.css">
     <meta charset="utf-8"/>
 </head>
 <body>
@@ -56,10 +56,10 @@
             </div>
         </div>
     </aside>
-<script src="js/slider.js"></script>
+<script src="/static_creator/js/slider.js"></script>
 <script type="module">
-import { arr_eq, arr_in_arr, arr_set_search, issubset, filter_dups} from './js/util.js';
-import {find_rows, find_columns, find_first_diagonals, find_second_diagonals, find_squares} from './js/find_patterns.js'
+import { arr_eq, arr_in_arr, arr_set_search, issubset, filter_dups} from '/static_creator/js/util.js';
+import {find_rows, find_columns, find_first_diagonals, find_second_diagonals, find_squares} from '/static_creator/js/find_patterns.js'
 const board_size = Math.min(document.body.getBoundingClientRect().height * 0.9, document.body.getBoundingClientRect().width * 0.5);
 const config = {
     rows:0,cols:0,name:"default",winsquarecombos:{},"squares":0,sq_colors:[]
@@ -89,6 +89,7 @@ colors.forEach(col => {
 function xml_http_post(url, data, callback) {
     var req = new XMLHttpRequest();
     req.open("POST", url, true);
+    req.setRequestHeader("Content-Type", "application/json");
     req.onreadystatechange = function() {
         if (this.readyState == 4) {
             callback(JSON.parse(this.responseText));
@@ -100,7 +101,7 @@ function show_save_message(response){
     document.getElementById("save_message").innerText = response["result"];
     setTimeout(function(){document.getElementById("save_message").innerText = ""},3000);
 }
-function save(){
+function save(resultdo=show_save_message){
     config.winsquarenums = [];
     config.deleted = [];
     for (var y=0;y<config.rows;y++){
@@ -133,9 +134,12 @@ function save(){
     config.name = document.getElementById("name").value;
     console.log(config.name);
     config.squares = config.rows*config.cols-config.deleted.length;
-    xml_http_post("game_creator.html",{"game":config},show_save_message);
+    xml_http_post("/solver/creator/",{"game":config},resultdo);
 }
 document.getElementById("save").addEventListener("click",save);
+document.getElementById("solve").addEventListener("click",e=>{save(()=>{
+    location.href="/solver/analyze/"+document.getElementById("name").value
+})})
 
 function add_row_patterns(){
     const pat_len = Number(document.getElementById("rownumber").value);

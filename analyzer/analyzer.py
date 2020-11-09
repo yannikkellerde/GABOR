@@ -1,13 +1,18 @@
 import sys,os
 sys.path.append(os.path.join(os.path.dirname(__file__),".."))
 sys.path.append(os.path.dirname(__file__))
-print(sys.path)
-from graph_tools_games import Tic_tac_toe, Qango6x6, Qango7x7, Qango7x7_plus, Json_game
+from graph_tools_games import instanz_by_name
+from graph_board_game import Board_game
+from solve_graph_tools import Solver_thread
+from util import provide_room_num
 import math
 import pickle
 import json
+import time
+from threading import Event
 from collections import defaultdict
 from flask import render_template
+from flask_socketio import join_room, leave_room
 
 from functools import reduce
 import os
@@ -21,37 +26,99 @@ class Solver_analyze():
     def __init__(self):
         self.session_to_game = {}
         self.game_name_to_sessions = defaultdict(set)
-        self.session_to_proofsets = {}
-        self.proofsets_with_sessions = defaultdict(set)
+        self.session_to_pset_name = {}
+        self.proofsets_to_sessions = defaultdict(set)
         self.game_name_to_game = {}
+        self.pset_name_to_pset = {}
+        self.session_last_access = {}
+        self.sid_to_thread = {}
+        self.session_timeout = 3600
+        self.psetnames = ("bd","bp","wd","wp")
+        self.ownfolders = set(("qango6x6","qango7x7","qango7x7_plus"))
 
-    def get_proofsets()
+    def timeout_sessions(self):
+        now = time.time()
+        delids = []
+        for uid,value in self.session_last_access.items():
+            if time.time() - value > 3600:
+                if uid in session_to_pset_name:
+                    pset_name = self.session_to_pset_name[uid]
+                    del self.session_to_pset_name[uid]
+                    self.proofsets_to_sessions[pset_name].remove(uid)
+                    if len(self.proofsets_to_sessions[pset_name])==0:
+                        del self.pset_name_to_pset[pset_name]
+                if uid in session_to_game:
+                    game_name = self.session_to_game[uid]
+                    del self.session_to_game[uid]
+                    self.game_name_to_sessions[game_name].remove(uid)
+                    if len(self.game_name_to_sessions[game_name])==0:
+                        del self.game_name_to_game[game_name]
+                delids.append(uid)
+        for delid in delids:
+            del self.session_last_access[delid]
+
+    def save_callback(self,psetname,color,proofset,disproofset):
+        if psetname in self.pset_name_to_pset:
+            self.pset_name_to_pset[psetname][color+"p"] = proofset
+            self.pset_name_to_pset[psetname][color+"d"] = disproofset
+        with open(os.path.join(base_path,"../proofsets",psetname,color+"p.pkl"),"wb") as f:
+            pickle.dump(proofset,f)
+        with open(os.path.join(base_path,"../proofsets",psetname,color+"d.pkl"),"wb") as f:
+            pickle.dump(disproofset,f)
+
+    def start_search(self,data,sid,uid,socketio):
+        color = data["color"]
+        blocked = data["blocked_sq"]
+        if uid in self.session_to_game:
+            game = self.session_to_game[uid]
+        else:
+            game = self.get_game(data["game_name"],uid)
+        for key in self.game_name_to_game:
+            if self.game_name_to_game[key] is game:
+                del self.game_name_to_game[key]
+                break
+        room_num = provide_room_num()
+        if uid not in self.session_to_pset_name:
+            self.get_proofsets(data["pset_name"],uid)
+        psetname = self.session_to_pset_name[uid]
+        if psetname not in self.pset_name_to_pset:
+            self.get_proofsets(data["pset_name"],uid)
+            psetname = self.session_to_pset_name[uid]
+        psets = self.pset_name_to_pset[psetname]
+        join_room(room_num,sid=sid)
+        save_callback = lambda pset,dset:self.save_callback(psetname,color,pset,dset)
+        self.sid_to_thread[sid] = Solver_thread(color,sid,room_num,game.name,data["position"],"b" if data["onturn"]==1 else "w",blocked,psets,save_callback,socketio)
+        self.sid_to_thread[sid].start()
+
+    def get_proofsets(self,proofsetname,uid):
+        if not (uid in self.session_to_pset_name and proofsetname == self.session_to_pset_name[uid]):
+            if proofsetname not in self.pset_name_to_pset:
+                self.pset_name_to_pset[proofsetname] = Board_game.load_psets(self.psetnames,os.path.join(base_path,"../proofsets",proofsetname))
+            self.session_to_pset_name[uid] = proofsetname
+            self.proofsets_to_sessions[proofsetname].add(uid)
+        return self.pset_name_to_pset[self.session_to_pset_name[uid]]
 
     def get_game(self,game_name,uid):
-        if not (uid in self.session_to_game and game_name_to_game[game_name] == self.session_to_game[uid]):
+        if not (uid in self.session_to_game and game_name in self.game_name_to_game and
+                self.game_name_to_game[game_name] == self.session_to_game[uid]):
             if game_name not in self.game_name_to_game:
-                if "qango6x6"==game_name:
-                    game = Qango6x6()
-                elif "qango7x7"==my_folder:
-                    game = Qango7x7()
-                elif "tic_tac_toe"==my_folder:
-                    game = Tic_tac_toe()
-                elif my_folder == "qango7x7_plus":
-                    game = Qango7x7_plus()
-                elif my_folder == "json":
-                    game = Json_game(os.path.join(base_path,"../json_games",sys.argv[2]+".json"))
+                game = instanz_by_name(game_name)
                 self.game_name_to_game[game_name] = game
             self.session_to_game[uid] = self.game_name_to_game[game_name]
-                self.game_name_to_sessions[game_name].add(uid)
+            self.game_name_to_sessions[game_name].add(uid)
         return self.session_to_game[uid]
 
-    def do_GET(self,game_name):
-        with open(os.path.join(base_path,game_name,"board.html"),"r") as f:
+    def do_GET(self,game_name,uid):
+        self.session_last_access[uid] = time.time()
+        self.timeout_sessions()
+        self.get_game(game_name,uid)
+        folder_name = game_name if game_name in self.ownfolders else "json"
+        with open(os.path.join(base_path,folder_name,"board.html"),"r") as f:
             my_board = f.read()
-        return render_template(os.path.join("explore_wins.html"),board = my_board, stylesheet=os.path.join("/static_analyzer",game_name,"board.css"),
-                               game_js_path=os.path.join("/static_analyzer",game_name,"game.js"))
+        return render_template(os.path.join("explore_wins.html"),board = my_board, stylesheet=os.path.join("/static_analyzer",folder_name,"board.css"),
+                               game_js_path=os.path.join("/static_analyzer",folder_name,"game.js"))
 
-    def create_proofset(self,new):
+    def create_proofset(self,game,new):
         path = os.path.join(base_path,"..","proofsets",new)
         if not os.path.exists(path):
             os.mkdir(path)
@@ -60,8 +127,12 @@ class Solver_analyze():
                     pickle.dump(set(),f)
 
     def do_POST(self,data,uid):
-        # read the message and convert it into a python dictionary
+        self.session_last_access[uid] = time.time()
         out = json.dumps({"error":"NOT FOUND"})
+        if uid in self.session_to_game:
+            game = self.session_to_game[uid]
+        else:
+            return json.dumps({"error":"No game associated with user id"})
         if "request" in data:
             if data["request"] == "config":
                 out = json.dumps(game.config)
@@ -69,28 +140,37 @@ class Solver_analyze():
                 out = json.dumps(game.board.rulesets)
             if data["request"] == "aval_proofsets":
                 proofsets = os.listdir(os.path.join(base_path,"..","proofsets"))
-                out = json.dumps({"proofsets":proofsets,"default":game.name})
+                if uid in self.session_to_pset_name:
+                    pname = self.session_to_pset_name[uid]
+                else:
+                    pname = game.name
+                    if game.name not in proofsets:
+                        self.create_proofset(game,game.name)
+                self.get_proofsets(game.name,uid)
+                out = json.dumps({"proofsets":proofsets,"default":pname})
         elif "new_proofset" in data:
-            self.create_proofset(data["new_proofset"])
+            self.create_proofset(game,data["new_proofset"])
             proofsets = os.listdir(os.path.join(base_path,"..","proofsets"))
-            game.board.load_set_folder(os.path.join(base_path,"../proofsets",data["new_proofset"]))
+            self.get_proofsets(data["new_proofset"],uid)
             out = json.dumps({"proofsets":proofsets,"default":data["new_proofset"],"changed_to":data["new_proofset"]})
         elif "set_proofset" in data:
-            game.board.load_set_folder(os.path.join(base_path,"../proofsets",data["set_proofset"]))
+            self.get_proofsets(data["set_proofset"],uid)
             out = json.dumps({"changed_to":data["set_proofset"]})
         elif "position" in data:
-            real_pos = [("f" if x==0 else ("b" if x==2 else "w")) for x in data["position"]]
-            print(real_pos,game.board.position)
-            game.board.set_position(real_pos,"b" if data["onturn"]==1 else "w")
-            game.board.draw_me()
-            depth = len(list(filter(lambda x:x!="f",real_pos)))
-            moves = game.get_actions(filter_superseeded=False,none_for_win=False)
-            board_moves = [game.board.node_map[x] for x in moves]
-            game.draw_me()
-            evals = game.board.check_move_val(moves)
-            moves_with_eval = list(zip(board_moves, evals))
-            # send the message back
-            out = json.dumps({"moves":moves_with_eval})
+            if uid in self.session_to_pset_name:
+                game.board.psets = self.pset_name_to_pset[self.session_to_pset_name[uid]]
+                real_pos = [("f" if x==0 else ("b" if x==2 else "w")) for x in data["position"]]
+                game.board.set_position(real_pos,"b" if data["onturn"]==1 else "w")
+                game.board.draw_me()
+                depth = len(list(filter(lambda x:x!="f",real_pos)))
+                moves = game.get_actions(filter_superseeded=False,none_for_win=False)
+                board_moves = [game.board.node_map[x] for x in moves]
+                game.draw_me()
+                evals = game.board.check_move_val(moves)
+                moves_with_eval = list(zip(board_moves, evals))
+                out = json.dumps({"moves":moves_with_eval})
+            else:
+                out = json.dumps({"moves":[]})
         elif "new_rule" in data:
             game.board.rulesets[data["new_rule"]] = data["blocked"]
             with open(os.path.join(base_path,"../rulesets",game.name+".json"),"w") as f:
@@ -104,42 +184,4 @@ class Solver_analyze():
             out = json.dumps(game.board.rulesets)
         return out
 
-def open_browser():
-    """Start a browser after waiting for half a second."""
-    def _open_browser():
-        webbrowser.open('http://localhost:%s/%s' % (PORT, FILE))
-    thread = threading.Timer(0.5, _open_browser)
-    thread.start()
-
-def start_server():
-    global PORT
-    """Start the server."""
-    while 1:
-        server_address = ("", PORT)
-        try:
-            server = HTTPServer(server_address, Post_handler)
-            break
-        except OSError as e:
-            PORT+=1
-    server.serve_forever()
-
-if __name__ == "__main__":
-    my_folder = sys.argv[1]
-    start_arg = 2
-    if "qango6x6"==my_folder:
-        game = Qango6x6()
-    elif "qango7x7"==my_folder:
-        game = Qango7x7()
-    elif "tic_tac_toe"==my_folder:
-        game = Tic_tac_toe()
-    elif my_folder == "qango7x7_plus":
-        game = Qango7x7_plus()
-    elif my_folder == "json":
-        game = Json_game(os.path.join(base_path,"../json_games",sys.argv[2]+".json"))
-        start_arg = 3
-    else:
-        raise ValueError(f"Game not found {my_folder}")
-    game.board.load_set_folder(os.path.join(base_path,"..","proofsets",game.name))
-    endgame_depth = 0
-    open_browser()
-    start_server()
+analyze_handler = Solver_analyze()
