@@ -19,6 +19,7 @@ export function load_game(){
 export function move_int_to_str(int_move){
     return "ABCDEFGHJKLMNOPQRSTUVWXYZ"[int_move % 7]+(parseInt(int_move/7)+1)
 }
+export function my_post(data){}
 
 export function get_squares(){
     var tbody = document.getElementById("board").children[0]

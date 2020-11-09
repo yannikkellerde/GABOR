@@ -3,7 +3,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__),".."))
 sys.path.append(os.path.dirname(__file__))
 from graph_tools_games import instanz_by_name
 from graph_board_game import Board_game
-from solve_graph_tools import Solver_thread
+from solve_graph_tools import background_thread
 from util import provide_room_num
 import math
 import pickle
@@ -87,8 +87,9 @@ class Solver_analyze():
         psets = self.pset_name_to_pset[psetname]
         join_room(room_num,sid=sid)
         save_callback = lambda pset,dset:self.save_callback(psetname,color,pset,dset)
-        self.sid_to_thread[sid] = Solver_thread(color,sid,room_num,game.name,data["position"],"b" if data["onturn"]==1 else "w",blocked,psets,save_callback,socketio)
-        self.sid_to_thread[sid].start()
+        back_thread = lambda :background_thread(color,sid,room_num,game.name,data["position"],"b" if data["onturn"]==1 else "w",blocked,psets,save_callback,socketio)
+        self.sid_to_thread[sid] = socketio.start_background_task(target=back_thread)
+        #back_thread()
 
     def get_proofsets(self,proofsetname,uid):
         if not (uid in self.session_to_pset_name and proofsetname == self.session_to_pset_name[uid]):
@@ -133,6 +134,7 @@ class Solver_analyze():
             game = self.session_to_game[uid]
         else:
             return json.dumps({"error":"No game associated with user id"})
+        print(game,data,uid)
         if "request" in data:
             if data["request"] == "config":
                 out = json.dumps(game.config)

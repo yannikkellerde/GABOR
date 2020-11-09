@@ -16,6 +16,7 @@ export function load_game(){
     }
     return [num_squares,true]
 }
+export function my_post(data){}
 
 export function move_int_to_str(int_move){
     removals = [0,0,3,3,3,8,29,34,34,34]

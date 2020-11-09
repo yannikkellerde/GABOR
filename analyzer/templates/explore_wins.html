@@ -515,7 +515,7 @@ function start_search(forcolor){
         if ("solved" in data){
             data = data.solved;
             console_el.innerHTML = `GAME SOLVED <br/> Root Proof-Number: ${data["PN"]}.<br/> Root Disproof-Number: ${data["DN"]}.<br/>
-                                Total Runtime ${data["runtime"]}`
+                                    Total Runtime ${data["runtime"]}<br/>${data["proofadds"][0]} new positions proven.<br/> ${data["proofadds"][1]} new positions disproven <br/>`
             show_moves();
             socket.disconnect();
             socket = null;

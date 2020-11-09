@@ -52,6 +52,7 @@ class Board_game():
         return psets
 
     def check_move_val(self,moves,priorize_sets=True):
+        self.inv_maps()
         winmoves = self.game.win_threat_search(one_is_enough=False,until_time=time.time()+5)
         self.game.view.gp["b"] = not self.game.view.gp["b"]
         defense_vertices,has_threat,_ = self.game.threat_search()

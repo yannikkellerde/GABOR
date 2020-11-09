@@ -9,7 +9,6 @@ from graph_tool.all import *
 import numpy as np
 import time
 from typing import Callable
-from threading import Thread, Event
 import json
 from flask_socketio import emit, send
 
@@ -215,6 +214,7 @@ class PN_search():
                     data["proofadds"] = self.proofadds
                     data["recently_saved"] = c%self.save_it==1
                     if not self.callback(data) or not resources_avaliable():
+                        self.callback({"failed":{"proofadds":self.proofadds,"PN":self.root[PN], "DN":self.root[DN], "runtime":time.time()-self.runtime_start}})
                         return False
             if save:
                 if c%self.save_it==0:
@@ -228,37 +228,21 @@ class PN_search():
             self.save_callback(self.provenset,self.disprovenset)
         return True
 
-thread_stop_event = Event()
+def my_callback(room,socketio,data):
+    socketio.emit("solve_state",json.dumps(data),room=room)
+    return True
 
-class Solver_thread(Thread):
-    def __init__(self,color,sid,room,game_name,position,onturn,blocked,psets,store_proofsets_callback,socketio):
-        super(Solver_thread, self).__init__()
-        self.sid = sid
-        self.room = room
-        self.color = color
-        self.position = [("f" if x==0 else ("b" if x==2 else "w")) for x in position]
-        self.onturn = onturn
-        self.game_name = game_name
-        self.blocked = blocked
-        self.psets = psets
-        self.store_proofsets_callback = store_proofsets_callback
-        self.socketio = socketio
-        thread_stop_event.clear()
-
-    def my_callback(self,data):
-        if thread_stop_event.isSet():
-            return False
-        else:
-            self.socketio.emit("solve_state",json.dumps(data),room=self.room)
-            return True
-
-    def run(self):
-        game = instanz_by_name(self.game_name)
-        game.board.set_position(self.position,self.onturn)
-        game.board.psets = self.psets
-        game.board.rulesets["temp_rules"] = self.blocked
-        pn_s = PN_search(game,self.my_callback,self.store_proofsets_callback)
-        pn_s.provenset = game.board.psets[self.color+"p"]
-        pn_s.disprovenset = game.board.psets[self.color+"d"]
-        res = pn_s.pn_search(onturn_proves=self.color==game.onturn,ruleset="temp_rules")
-        print("PN search with status",res)
+def background_thread(color,sid,room,game_name,position,onturn,blocked,psets,store_proofsets_callback,socketio):
+    position = [("f" if x==0 else ("b" if x==2 else "w")) for x in position]
+    game = instanz_by_name(game_name)
+    """game.board.set_position(position,onturn)
+    game.board.psets = psets
+    game.board.rulesets["temp_rules"] = blocked
+    pn_s = PN_search(game,lambda data:my_callback(room,socketio,data),store_proofsets_callback)
+    pn_s.provenset = game.board.psets[color+"p"]
+    pn_s.disprovenset = game.board.psets[color+"d"]
+    res = pn_s.pn_search(onturn_proves=color==game.onturn,ruleset="temp_rules")"""
+    for i in range(10):
+        time.sleep(1)
+        my_callback(room,socketio,{"iteration":i,"proofadds":[i,i],"node_count":i,"alive_graphs":i,"runtime":i,"depths":i,"PNs":[i],"DNs":[i],"recently_saved":False})
+    #print("PN search with status",res)

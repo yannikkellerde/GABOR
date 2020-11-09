@@ -17,6 +17,8 @@ export function load_game(){
     return [num_squares,true];
 }
 
+export function my_post(data){}
+
 export function move_int_to_str(int_move){
     return "ABCDEFGHJKLMNOPQRSTUVWXYZ"[int_move % 6]+(parseInt(int_move/6)+1)
 }
