@@ -53,6 +53,8 @@ class PN_search():
                 n[DN] = min(n[DN], c[DN])
 
     def delete_node(self, n, ps, ch):
+        if n==self.root:
+            return
         for p in ps:
             for i in range(len(p[CHILDREN])):
                 if p[CHILDREN][i]==n:
