@@ -11,7 +11,7 @@
         </tbody>
     </table>
     <aside>
-        <div class="row" id="savestuff"><div id="namediv">Name: <input id="name" type="text" value="Test"></div>
+        <div class="row" id="savestuff"><div id="namediv">Name: <input id="name" type="text" value="{{game_name}}"></div>
             <div class="row">
                 <button class="addbutton" id="save">Save</button>
                 <button class="addbutton" id="solve">To solve window</button>
@@ -61,8 +61,8 @@
 import { arr_eq, arr_in_arr, arr_set_search, issubset, filter_dups} from '/static_creator/js/util.js';
 import {find_rows, find_columns, find_first_diagonals, find_second_diagonals, find_squares} from '/static_creator/js/find_patterns.js'
 const board_size = Math.min(document.body.getBoundingClientRect().height * 0.9, document.body.getBoundingClientRect().width * 0.5);
-const config = {
-    rows:0,cols:0,name:"default",winsquarecombos:{},"squares":0,sq_colors:[]
+var config = {
+    rows:0,cols:0,name:document.getElementById("name").value,winsquarecombos:{},"squares":0,sq_colors:[]
 }
 var selected_wp = null;
 var tds = [];
@@ -101,7 +101,7 @@ function show_save_message(response){
     document.getElementById("save_message").innerText = response["result"];
     setTimeout(function(){document.getElementById("save_message").innerText = ""},3000);
 }
-function save(resultdo=show_save_message){
+function save(resultdo){
     config.winsquarenums = [];
     config.deleted = [];
     for (var y=0;y<config.rows;y++){
@@ -134,9 +134,9 @@ function save(resultdo=show_save_message){
     config.name = document.getElementById("name").value;
     console.log(config.name);
     config.squares = config.rows*config.cols-config.deleted.length;
-    xml_http_post("/solver/creator/",{"game":config},resultdo);
+    xml_http_post("/solver/creator/"+config.name,{"game":config},resultdo);
 }
-document.getElementById("save").addEventListener("click",save);
+document.getElementById("save").addEventListener("click",()=>save(show_save_message));
 document.getElementById("solve").addEventListener("click",e=>{save(()=>{
     location.href="/solver/analyze/"+document.getElementById("name").value
 })})
@@ -464,6 +464,21 @@ function change_rows_cols(rows,cols){
     remove_stupid_winsquarecombs();
     display_board();
 }
+function set_sliders(rows,cols){
+    const row_slider = document.getElementById("num_rows");
+    const col_slider = document.getElementById("num_columns");
+    row_slider.value = ((rows-1)/row_slider.getAttribute("data-max"))*100
+    col_slider.value = ((cols-1)/col_slider.getAttribute("data-max"))*100
+}
+function setconfig(data){
+    if (data.config==null||data.config==undefined){
+        return
+    }
+    config = JSON.parse(data.config);
+    change_rows_cols(config.rows,config.cols);
+    show_wps();
+    update_buttons();
+}
 const nc = document.getElementById("num_columns");
 change_rows_cols(config.rows,Number(nc.getAttribute("data-value")));
 nc.addEventListener("mouseup", function(event){
@@ -474,5 +489,6 @@ change_rows_cols(Number(nr.getAttribute("data-value")),config.cols)
 nr.addEventListener("mouseup", function(event){
     change_rows_cols(Number(nr.getAttribute("data-value")),config.cols);
 });
+xml_http_post("/solver/creator/"+config.name,{"request":"config"},setconfig)
 </script>
 </body>

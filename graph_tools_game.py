@@ -78,6 +78,7 @@ class Graph_game():
                     self.graph.add_edge(ws_vert,my_v)
         self.graph.vp.f.a = np.ones(self.graph.num_vertices())
         self.view = GraphView(self.graph,self.graph.vp.f)
+        self.board.inv_maps()
 
     def get_actions(self,filter_superseeded=True,none_for_win=True):
         actions = []

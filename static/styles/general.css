@@ -1,0 +1,11 @@
+body{
+    display: flex;
+    flex-flow: column;
+    flex-wrap: nowrap;
+}
+.table-wrapper-wrapper{
+    display: flex;
+    flex-flow: row;
+    justify-content: center;
+    margin-top:100px;
+}

@@ -67,6 +67,8 @@ document.getElementById("go_back").addEventListener("click",go_back);
 document.getElementById("go_forward").addEventListener("click",go_forward);
 document.getElementById("go_end").addEventListener("click",go_end);
 document.getElementById("go_start").addEventListener("click",go_start);
+var loc_split = location.href.split("/")
+const game_name = loc_split[loc_split.length-1]
 
 import { load_game, move_int_to_str, get_squares, my_post} from '{{game_js_path}}';
 
@@ -156,10 +158,9 @@ function show_moves(){
         testpos[move] = onturn;
         return [move,evaluate(testpos)];
     }
-    document.getElementById("table_data").innerHTML="";
     function have_moves_to_show(server_data){
+        document.getElementById("table_data").innerHTML="";
         var miteval = [];
-        //curval = server_data.moves[0][1]
         miteval = server_data.moves.slice()
         for (var i=0;i<miteval.length;i++){
             var move = miteval[i][0];
@@ -188,7 +189,8 @@ function show_moves(){
         }
         hide_blocked();
     }
-    const my_data = {"position":position,"onturn":onturn-1}
+    
+    const my_data = {"position":position,"onturn":onturn,"game_name":game_name,"pset_name":document.getElementById("text_proofset").value}
     xml_http_post("python_server/explore_wins.html",my_data,have_moves_to_show)
 }
 
@@ -396,6 +398,7 @@ function set_rulesets(rss){
             opt.selected = true;
             cur_rule = key;
             block_squares(value);
+            first = false;
         }
         sel.appendChild(opt);
     }
@@ -439,9 +442,11 @@ if (vals[1]){
     squares = get_squares();
     reset();
     letter_board();
+    xml_http_post("explore_wins",{request:"rulesets",game_name:game_name},set_rulesets);
+    xml_http_post("explore_wins",{request:"aval_proofsets",game_name:game_name},set_aval_proofsets);
 }
 else{
-    xml_http_post("explore_wins.html",{"request":"config"},data=>{
+    xml_http_post("explore_wins.html",{"request":"config",game_name:game_name},data=>{
         var res = my_post(data);
         num_squares = res[0];
         squares = res[1];
@@ -450,6 +455,8 @@ else{
         reset();
         show_moves();
         letter_board();
+        xml_http_post("explore_wins",{request:"rulesets",game_name:game_name},set_rulesets);
+        xml_http_post("explore_wins",{request:"aval_proofsets",game_name:game_name},set_aval_proofsets);
     })
 }
 
@@ -463,13 +470,13 @@ document.getElementById("add_ruleset").addEventListener("click", function(e){
     var rulename = document.getElementById("rulename").value;
     var depth = get_depth();
     if (depth == 0 && rulename.length>0){
-        xml_http_post("explore_wins",{"new_rule":rulename,"blocked":blocked_squares},set_rulesets);
+        xml_http_post("explore_wins",{"new_rule":rulename,"blocked":blocked_squares,game_name:game_name},set_rulesets);
     }
 });
 document.getElementById("remove_ruleset").addEventListener("click",function(e){
     var depth = get_depth();
     if (depth==0){
-        xml_http_post("explore_wins",{"del_rule":cur_rule},set_rulesets);
+        xml_http_post("explore_wins",{"del_rule":cur_rule,game_name:game_name},set_rulesets);
     }
 });
 document.getElementById("choose_ruleset").addEventListener("change", function(e){
@@ -480,14 +487,14 @@ document.getElementById("choose_ruleset").addEventListener("change", function(e)
     }
 })
 document.getElementById("select_proofset").addEventListener("change", e=>{
-    xml_http_post("explore_wins",{set_proofset:e.target.value},data=>{
+    xml_http_post("explore_wins",{set_proofset:e.target.value,game_name:game_name},data=>{
         document.getElementById("text_proofset").value = data["changed_to"];
         show_moves();
     });
 })
 document.getElementById("text_proofset").addEventListener("keydown",e=>{
     if (e.key === "Enter" && !proofsets.includes(e.target.value)){
-        xml_http_post("explore_wins",{"new_proofset":e.target.value},data=>{
+        xml_http_post("explore_wins",{"new_proofset":e.target.value,game_name:game_name},data=>{
             set_aval_proofsets(data);
             document.getElementById("text_proofset").value = data["changed_to"];
             show_moves();
@@ -501,10 +508,10 @@ function start_search(forcolor){
     if (socket==null){
         socket = io();
     }
-    var loc_split = location.href.split("/")
     socket.on('connect', function() {
         if (!runningsolve){
-            socket.emit('start_search', {"color":forcolor,"blocked_sq":blocked_squares,"game_name":loc_split[loc_split.length-1],
+            console.log("sending start search request");
+            socket.emit('start_search', {"color":forcolor,"blocked_sq":blocked_squares,"game_name":game_name,
                                          "pset_name":document.getElementById("text_proofset").value,"position":position,"onturn":onturn});
             runningsolve = true;
         }
@@ -522,11 +529,11 @@ function start_search(forcolor){
             runningsolve = false;
         }
         else{
-            console_el.innerHTML = `Iteration ${data["iteration"]}, ${data["runtime"]} seconds running:<br/>
-                                ${data["node_count"]} nodes created. ${data["alive_graphs"]} graphs stored in memory.<br/>
-                                ${data["proofadds"][0]} new positions proven. ${data["proofadds"][1]} new positions disproven <br/>
-                                only one variation until depth ${data["depth"]}. <br/>Proofnumbers afterwards:<br/>
-                                ${data["PNs"].join(" ")}<br/>Disproof numbers:<br/>${data["DNs"].join(" ")}`
+            console_el.innerHTML = `Iteration ${data["iteration"]}<br/> running for ${Math.round(data["runtime"])} seconds:<br/>
+                                ${data["node_count"]} nodes created.<br/> ${data["alive_graphs"]} graphs stored in memory.<br/>
+                                ${data["proofadds"][0]} new positions proven.<br/> ${data["proofadds"][1]} new positions disproven <br/>`+
+                                (data["depth"]==0?``:`only one variation until depth ${data["depth"]}.`) + `<br/>Proof-numbers ${data["depth"]==0?'':'afterwards'}:<br/>
+                                ${data["PNs"].join(" ")}<br/>Disproof-numbers:<br/>${data["DNs"].join(" ")}`
             if (data["recently_saved"]){
                 show_moves();
             }
@@ -540,8 +547,6 @@ function start_search(forcolor){
 }
 document.getElementById("search_for_black").addEventListener("click",function(){start_search("b")});
 document.getElementById("search_for_white").addEventListener("click",function(){start_search("w")});
-xml_http_post("explore_wins",{request:"rulesets"},set_rulesets);
-xml_http_post("explore_wins",{request:"aval_proofsets"},set_aval_proofsets);
 </script>
 </body>
 </html>

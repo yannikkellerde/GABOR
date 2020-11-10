@@ -14,4 +14,5 @@ for (var i=0;i<inputs.length;i++){
     }
     eventfunc();
     input.addEventListener("input", eventfunc);
+    input.addEventListener("change", eventfunc);
 }

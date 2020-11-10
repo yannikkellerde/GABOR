@@ -9,6 +9,7 @@ from graph_tool.all import *
 import numpy as np
 import time
 from typing import Callable
+import threading
 import json
 from flask_socketio import emit, send
 
@@ -186,6 +187,7 @@ class PN_search():
     def pn_search(self,onturn_proves=True,verbose=True,save=True,ruleset=2):
         blocked = self.game.board.get_blocked_squares(ruleset)
         prove_color = self.game.onturn if onturn_proves else ("w" if self.game.onturn=="b" else "b")
+        print("***********************\n",self.game.board.pos_from_graph(),self.game.onturn,prove_color,"\n**********************")
         self.game.hashme()
         hashval = self.game.hash
         self.root = [1,1,hashval,[],[],onturn_proves,self.game.extract_storage()]
@@ -229,20 +231,24 @@ class PN_search():
         return True
 
 def my_callback(room,socketio,data):
-    socketio.emit("solve_state",json.dumps(data),room=room)
-    return True
+    t = threading.currentThread()
+    if getattr(t, "do_run", True):
+        socketio.emit("solve_state",json.dumps(data),room=room)
+        return True
+    else:
+        return False
 
 def background_thread(color,sid,room,game_name,position,onturn,blocked,psets,store_proofsets_callback,socketio):
     position = [("f" if x==0 else ("b" if x==2 else "w")) for x in position]
     game = instanz_by_name(game_name)
-    """game.board.set_position(position,onturn)
+    game.board.set_position(position,onturn)
     game.board.psets = psets
     game.board.rulesets["temp_rules"] = blocked
     pn_s = PN_search(game,lambda data:my_callback(room,socketio,data),store_proofsets_callback)
     pn_s.provenset = game.board.psets[color+"p"]
     pn_s.disprovenset = game.board.psets[color+"d"]
-    res = pn_s.pn_search(onturn_proves=color==game.onturn,ruleset="temp_rules")"""
-    for i in range(10):
+    res = pn_s.pn_search(onturn_proves=color==game.onturn,ruleset="temp_rules")
+    """for i in range(10):
         time.sleep(1)
-        my_callback(room,socketio,{"iteration":i,"proofadds":[i,i],"node_count":i,"alive_graphs":i,"runtime":i,"depths":i,"PNs":[i],"DNs":[i],"recently_saved":False})
-    #print("PN search with status",res)
+        my_callback(room,socketio,{"iteration":i,"proofadds":[i,i],"node_count":i,"alive_graphs":i,"runtime":i,"depths":i,"PNs":[i],"DNs":[i],"recently_saved":False})"""
+    print("PN search with status",res)

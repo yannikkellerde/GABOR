@@ -1,6 +1,7 @@
 import math
 import psutil
 import networkx as nx
+import os,sys
 from networkx.drawing.nx_agraph import write_dot, graphviz_layout
 import matplotlib.pyplot as plt
 
@@ -41,7 +42,8 @@ def draw_pn_tree(root,depth=3):
     #nx.draw_networkx_labels(g, pos, labels = node_labels, font_size=font_sizes, font_color="white")
     for node, (x, y) in pos.items():
         plt.text(x, y, node_labels[node], fontsize=font_sizes[node], ha='center', va='center', color="black")
-    plt.savefig('pn_tree.svg')
+    print("Hello",os.path.abspath('pn_tree.svg'))
+    plt.savefig(os.path.abspath('pn_tree.svg'))
     plt.close()
 
 

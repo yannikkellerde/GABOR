@@ -9,7 +9,7 @@ import math
 import pickle
 import json
 import time
-from threading import Event
+from threading import Lock
 from collections import defaultdict
 from flask import render_template
 from flask_socketio import join_room, leave_room
@@ -24,17 +24,16 @@ PORT = 8081
 
 class Solver_analyze():
     def __init__(self):
-        self.session_to_game = {}
-        self.game_name_to_sessions = defaultdict(set)
+        self.session_to_game_name = {}
         self.session_to_pset_name = {}
         self.proofsets_to_sessions = defaultdict(set)
-        self.game_name_to_game = {}
         self.pset_name_to_pset = {}
         self.session_last_access = {}
         self.sid_to_thread = {}
+        self.lock = Lock()
         self.session_timeout = 3600
         self.psetnames = ("bd","bp","wd","wp")
-        self.ownfolders = set(("qango6x6","qango7x7","qango7x7_plus"))
+        self.ownfolders = set(("qango6x6_static","qango7x7_static","qango7x7_plus_static"))
 
     def timeout_sessions(self):
         now = time.time()
@@ -47,12 +46,6 @@ class Solver_analyze():
                     self.proofsets_to_sessions[pset_name].remove(uid)
                     if len(self.proofsets_to_sessions[pset_name])==0:
                         del self.pset_name_to_pset[pset_name]
-                if uid in session_to_game:
-                    game_name = self.session_to_game[uid]
-                    del self.session_to_game[uid]
-                    self.game_name_to_sessions[game_name].remove(uid)
-                    if len(self.game_name_to_sessions[game_name])==0:
-                        del self.game_name_to_game[game_name]
                 delids.append(uid)
         for delid in delids:
             del self.session_last_access[delid]
@@ -69,14 +62,10 @@ class Solver_analyze():
     def start_search(self,data,sid,uid,socketio):
         color = data["color"]
         blocked = data["blocked_sq"]
-        if uid in self.session_to_game:
-            game = self.session_to_game[uid]
+        if uid in self.session_to_game_name:
+            game_name = self.session_to_game_name[uid]
         else:
             game = self.get_game(data["game_name"],uid)
-        for key in self.game_name_to_game:
-            if self.game_name_to_game[key] is game:
-                del self.game_name_to_game[key]
-                break
         room_num = provide_room_num()
         if uid not in self.session_to_pset_name:
             self.get_proofsets(data["pset_name"],uid)
@@ -87,8 +76,9 @@ class Solver_analyze():
         psets = self.pset_name_to_pset[psetname]
         join_room(room_num,sid=sid)
         save_callback = lambda pset,dset:self.save_callback(psetname,color,pset,dset)
-        back_thread = lambda :background_thread(color,sid,room_num,game.name,data["position"],"b" if data["onturn"]==1 else "w",blocked,psets,save_callback,socketio)
-        self.sid_to_thread[sid] = socketio.start_background_task(target=back_thread)
+        back_thread = lambda :background_thread(color,sid,room_num,game_name,data["position"],"b" if data["onturn"]==2 else "w",blocked,psets,save_callback,socketio)
+        with self.lock:
+            self.sid_to_thread[sid] = socketio.start_background_task(target=back_thread)
         #back_thread()
 
     def get_proofsets(self,proofsetname,uid):
@@ -112,7 +102,7 @@ class Solver_analyze():
     def do_GET(self,game_name,uid):
         self.session_last_access[uid] = time.time()
         self.timeout_sessions()
-        self.get_game(game_name,uid)
+        self.session_to_game_name[uid] = game_name
         folder_name = game_name if game_name in self.ownfolders else "json"
         with open(os.path.join(base_path,folder_name,"board.html"),"r") as f:
             my_board = f.read()
@@ -130,11 +120,8 @@ class Solver_analyze():
     def do_POST(self,data,uid):
         self.session_last_access[uid] = time.time()
         out = json.dumps({"error":"NOT FOUND"})
-        if uid in self.session_to_game:
-            game = self.session_to_game[uid]
-        else:
-            return json.dumps({"error":"No game associated with user id"})
-        print(game,data,uid)
+        game = instanz_by_name(data["game_name"])
+        print(data)
         if "request" in data:
             if data["request"] == "config":
                 out = json.dumps(game.config)
@@ -159,20 +146,21 @@ class Solver_analyze():
             self.get_proofsets(data["set_proofset"],uid)
             out = json.dumps({"changed_to":data["set_proofset"]})
         elif "position" in data:
-            if uid in self.session_to_pset_name:
+            if uid in self.session_to_pset_name and self.session_to_pset_name[uid]==data["pset_name"]:
                 game.board.psets = self.pset_name_to_pset[self.session_to_pset_name[uid]]
-                real_pos = [("f" if x==0 else ("b" if x==2 else "w")) for x in data["position"]]
-                game.board.set_position(real_pos,"b" if data["onturn"]==1 else "w")
-                game.board.draw_me()
-                depth = len(list(filter(lambda x:x!="f",real_pos)))
-                moves = game.get_actions(filter_superseeded=False,none_for_win=False)
-                board_moves = [game.board.node_map[x] for x in moves]
-                game.draw_me()
-                evals = game.board.check_move_val(moves)
-                moves_with_eval = list(zip(board_moves, evals))
-                out = json.dumps({"moves":moves_with_eval})
             else:
-                out = json.dumps({"moves":[]})
+                game.board.psets = self.get_proofsets(data["pset_name"],uid)
+            game.board.psets = self.pset_name_to_pset[self.session_to_pset_name[uid]]
+            real_pos = [("f" if x==0 else ("b" if x==2 else "w")) for x in data["position"]]
+            game.board.set_position(real_pos,"b" if data["onturn"]==2 else "w")
+            game.board.draw_me()
+            depth = len(list(filter(lambda x:x!="f",real_pos)))
+            moves = game.get_actions(filter_superseeded=False,none_for_win=False)
+            board_moves = [game.board.node_map[x] for x in moves]
+            game.draw_me()
+            evals = game.board.check_move_val(moves)
+            moves_with_eval = list(zip(board_moves, evals))
+            out = json.dumps({"moves":moves_with_eval})
         elif "new_rule" in data:
             game.board.rulesets[data["new_rule"]] = data["blocked"]
             with open(os.path.join(base_path,"../rulesets",game.name+".json"),"w") as f:
