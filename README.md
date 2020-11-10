@@ -1,3 +1,6 @@
+# GABOR
+**G**r**A**ph **B**ased b**O**ard game solve**R**
+
 ## Introduction
 I was interested in solving the game [Qango](http://qango.de/index.html?page=spiel&language=englisch). Qango is a two player, zero sum, perfect knowlege game, which is equivalent to a bigger version of [tic tac toe](https://de.wikipedia.org/wiki/Tic-Tac-Toe) with different winning conditions. To solve the game I decided to use a [proof-number search](https://www.chessprogramming.org/Proof-Number_Search) as the game includes a lot of forced variations. If you just wan't to check out the results, go to [yannikkeller.de](http://yannikkeller.de/qango/game_solver/page/playme.html) and get beaten down by the perfect ai. You can also just explore the winning moves [here](http://yannikkeller.de/qango/game_solver/page/explore_wins.html).
 
