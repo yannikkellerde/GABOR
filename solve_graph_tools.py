@@ -216,8 +216,9 @@ class PN_search():
                     data["DNs"] = [x[DN] for x in cur[CHILDREN]]
                     data["proofadds"] = self.proofadds
                     data["recently_saved"] = c%self.save_it==1
-                    if not self.callback(data) or not resources_avaliable():
-                        self.callback({"failed":{"proofadds":self.proofadds,"PN":self.root[PN], "DN":self.root[DN], "runtime":time.time()-self.runtime_start}})
+                    aval = resources_avaliable()
+                    if not self.callback(data) or not aval:
+                        self.callback({"failed":{"proofadds":self.proofadds,"PN":self.root[PN], "DN":self.root[DN], "runtime":time.time()-self.runtime_start, "no_resource":not aval}})
                         return False
             if save:
                 if c%self.save_it==0:

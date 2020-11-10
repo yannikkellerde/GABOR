@@ -530,6 +530,12 @@ function start_search(forcolor){
             socket = null;
             runningsolve = false;
         }
+        else if ("failed" in data){
+            data = data.failed
+            console_el.innerHTML = `GAME NOT SOLVED <br/>`+(data["no_resource"]?"No memory left":"Socket disconnected")+`<br/>
+                                    Root Proof-Number: ${data["PN"]}.<br/> Root Disproof-Number: ${data["DN"]}.<br/>
+                                    Total Runtime ${data["runtime"]}<br/>${data["proofadds"][0]} new positions proven.<br/> ${data["proofadds"][1]} new positions disproven <br/>`
+        }
         else{
             console_el.innerHTML = `Iteration ${data["iteration"]}<br/> running for ${Math.round(data["runtime"])} seconds:<br/>
                                 ${data["node_count"]} nodes created.<br/> ${data["alive_graphs"]} graphs stored in memory.<br/>
