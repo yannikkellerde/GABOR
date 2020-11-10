@@ -4,7 +4,6 @@ import pickle
 import os,sys
 from graph_tools_games import instanz_by_name
 from graph_tools_game import Graph_game
-from data_magic import save_sets
 from graph_tool.all import *
 import numpy as np
 import time

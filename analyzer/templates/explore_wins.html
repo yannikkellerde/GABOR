@@ -10,6 +10,7 @@
 
 <body>
 <aside>
+    <a class="button1" href="/solver" id="back_to_main">Back to game selection</a>
     <div id="ruleset_stuff">
         <select id="choose_ruleset"></select><button class="addbutton margin-10" id="remove_ruleset">Delete ruleset</button>
         <div id="radios" class="row">
@@ -411,6 +412,7 @@ function set_aval_proofsets(data){
         const opt = document.createElement("option");
         opt.innerText = ps;
         if (ps == data["default"]){
+            console.log("setting selected")
             opt.setAttribute("selected", true);
         }
         document.getElementById("select_proofset").appendChild(opt);

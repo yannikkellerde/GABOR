@@ -129,14 +129,18 @@ class Solver_analyze():
                 out = json.dumps(game.board.rulesets)
             if data["request"] == "aval_proofsets":
                 proofsets = os.listdir(os.path.join(base_path,"..","proofsets"))
-                if uid in self.session_to_pset_name:
-                    pname = self.session_to_pset_name[uid]
-                else:
+                if game.name in proofsets:
                     pname = game.name
-                    if game.name not in proofsets:
-                        self.create_proofset(game,game.name)
+                else:
+                    if uid in self.session_to_pset_name:
+                        pname = self.session_to_pset_name[uid]
+                    else:
+                        if len(proofsets)>0:
+                            pname = proofsets[0]
+                        else:
+                            pname = "new_proofset"
                 self.get_proofsets(game.name,uid)
-                out = json.dumps({"proofsets":proofsets,"default":pname})
+                out = json.dumps({"proofsets":proofsets,"default":pname if pname in proofsets else proofsets[0]})
         elif "new_proofset" in data:
             self.create_proofset(game,data["new_proofset"])
             proofsets = os.listdir(os.path.join(base_path,"..","proofsets"))

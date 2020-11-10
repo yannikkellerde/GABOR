@@ -11,9 +11,9 @@ class Solver_handler():
         return f"""
         <tr>
             <td>{game_name}</td>
-            <td><button onclick='location.href="/solver/creator/{game_name}"'>Edit</button></td>
-            <td><button onclick='location.href="/solver/analyze/{game_name}"'>Analyze</button></td>
-            <td><button onclick='del_game("{game_name}")'>Delete</button></td>
+            <td><a href="/solver/creator/{game_name}">Edit</a></td>
+            <td><a href="/solver/analyze/{game_name}">Analyze</a></td>
+            <td><a href="#" onclick='del_game("{game_name}")'>Delete</a></td>
         <tr/>
         """
     def do_GET(self):
