@@ -1,50 +1,6 @@
 import math
 import psutil
-import networkx as nx
 import os,sys
-from networkx.drawing.nx_agraph import write_dot, graphviz_layout
-import matplotlib.pyplot as plt
-
-def draw_pn_tree(root,depth=3):
-    global count
-    def add_nodes_recur(cur,depth):
-        global count
-        g.add_node(count,label=f"{cur[PN]}|{cur[DN]}")
-        node_sizes.append(900 if depth>0 else 150)
-        font_sizes[count] = 7 if depth>0 else 4
-        my_c = count
-        count += 1
-        if depth<=0:
-            return my_c
-        for child in cur[CHILDREN]:
-            c_num = add_nodes_recur(child,depth-1)
-            g.add_edge(my_c,c_num)
-        return my_c
-    node_sizes = []
-    font_sizes = {}
-    plt.cla()
-    # Node storage for memory efficency in lists
-    PN = 0 # int
-    DN = 1 # int
-    HASH = 2 # int
-    PARENTS = 3 # List of Nodes(which are lists)
-    CHILDREN = 4 # List of tuples containing move made and Node (which is a lists)
-    PROOFNODE = 5 # Bool, are we in a proof node or disproof node
-    STORAGE = 6 # A tuple containing 1. an owner map, 2. a filter map, 3. onturn bool
-    count = 0
-    g = nx.DiGraph()
-    add_nodes_recur(root,depth)
-    plt.figure(figsize=(20,10)) 
-    write_dot(g,'test.dot')
-    pos = graphviz_layout(g, prog='dot')
-    nx.draw(g, pos, with_labels=False, arrows=True, node_color="lightblue", node_size=node_sizes)
-    node_labels = nx.get_node_attributes(g,'label')
-    #nx.draw_networkx_labels(g, pos, labels = node_labels, font_size=font_sizes, font_color="white")
-    for node, (x, y) in pos.items():
-        plt.text(x, y, node_labels[node], fontsize=font_sizes[node], ha='center', va='center', color="black")
-    print("Hello",os.path.abspath('pn_tree.svg'))
-    plt.savefig(os.path.abspath('pn_tree.svg'))
-    plt.close()
 
 
 def findsquares(squares):

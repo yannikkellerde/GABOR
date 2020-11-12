@@ -1,7 +1,6 @@
 import networkx as nx
 from graph_tools_games import Tic_tac_toe,Qango6x6,Qango7x7,Qango7x7_plus,Json_game
 from solve_graph_tools import PN_search
-import matplotlib.pyplot as plt
 import time
 from ai_api import Ai_api
 from functools import reduce

@@ -1,6 +1,5 @@
 import os,sys
 import json
-from urllib.parse import parse_qs
 from flask import render_template
 
 base_path = os.path.abspath(os.path.dirname(__file__))

@@ -3,7 +3,6 @@ from graph_board_game import Board_game
 from util import findfivers, findsquares, remove_useless_wsn
 from graph_tool.all import *
 import json
-import matplotlib.pyplot as plt
 from collections import defaultdict
 import os,sys
 base_path = os.path.abspath(os.path.dirname(__file__))

@@ -1,5 +1,5 @@
 import math
-from util import resources_avaliable,draw_pn_tree
+from util import resources_avaliable
 import pickle
 import os,sys
 from graph_tools_games import instanz_by_name

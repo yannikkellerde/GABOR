@@ -1,29 +1,37 @@
 # GABOR
-**G**r**A**ph **B**ased b**O**ard game solve**R**
+## What is GABOR?
+**G**r**A**ph **B**ased b**O**ard game solve**R** (GABOR) is a solving algorithm/program for a class of board games. That class is board games, where 2 players take alternating turns occupying squares. A player wins, if he manages to occupy all squares of a specific pattern. Real-world examples for this type of game are [tic tac toe](https://en.wikipedia.org/wiki/Tic-Tac-Toe), [Qango](http://qango.de/index.html?page=spiel&language=englisch) or [Go-Moku](https://en.wikipedia.org/wiki/Gomoku). GABOR can, without modifications, deal with any game of this class, no matter the shape of the board or the layout of the winpatterns.
 
-## Introduction
-I was interested in solving the game [Qango](http://qango.de/index.html?page=spiel&language=englisch). Qango is a two player, zero sum, perfect knowlege game, which is equivalent to a bigger version of [tic tac toe](https://de.wikipedia.org/wiki/Tic-Tac-Toe) with different winning conditions. To solve the game I decided to use a [proof-number search](https://www.chessprogramming.org/Proof-Number_Search) as the game includes a lot of forced variations. If you just wan't to check out the results, go to [yannikkeller.de](http://yannikkeller.de/qango/game_solver/page/playme.html) and get beaten down by the perfect ai. You can also just explore the winning moves [here](http://yannikkeller.de/qango/game_solver/page/explore_wins.html).
+## Why would you want to use GABOR?
+On [http://python.yannikkeller.de/solver/](http://python.yannikkeller.de/solver/), you can find a community platform for sharing and exploring games and solutions created by GABOR. If you just want to see some of GABORs findings without installing anything, you should probably head over there. However, to start solving your own games, you will have to install GABOR on your computer. You can then head back to [http://python.yannikkeller.de/solver/](http://python.yannikkeller.de/solver/) and share your computed solutions with the world.
 
-## Rules of Qango
-There are two different versions of Qango, the 6x6 version and the 7x7 version. My software focusses on solving the 6x6 version. Just like in tic tac toe, the players take alternating turns occupying squares until one of them achieves a winning pattern. Instead of marking them with X and O's, the players use white and black stones to mark theire squares. In Qango, there are the following winning patterns:
-1. A 5 stone row, horizontally, vertically or diagonally
-2. A 2x2 square
-3. 3 contiguous squares of the same color (The Qango board is colored, click [here](http://yannikkeller.de/qango/game_solver/page/playme.html) to check out the color patterns)
+## Installation
+Requirements: `python3.8+, graph-tool, flask, flask-socketio, uwsgi, psutil`  
+GABOR depends on [graph-tool](https://graph-tool.skewed.de/), which is easiest installed via conda. If you have conda ready, you can install from [environment.yml](/environment.yml) via `conda env create -f environment.yml`. Activate the env via `conda activate GABOR`
 
-As for advanced players, it becomes very obvious, that the game is winning for the first player in it's normal state, there is an additional Rule for advanced players called [Burgregel](http://qango.de/index.html?page=fortgeschrittene&language=deutsch). With this Rule, the first player isn't allowed to occupy the 4 squares in the center or the 4 squares in the 2-2 position in the first move (check out the black X-es in the beginning of the game when playing on [yannikkeller.de](http://yannikkeller.de/qango/game_solver/page/playme.html)).
-A long time ago, I had already suspected, that the game would still be a first player win, even when using the *Burgregel*. In fact, I was able to finally proove it using this software.
+If the install from `environment.yml` fails, you can try installing manually with the commands  
+`conda install -c conda-forge graph-tool`  
+`conda activate gt`  
+`conda install -c conda-forge uwsgi`  
+`pip install flask flask_socketio psutil`
 
-## Implementation
-I implemented the Software in Python3, because Python is just such an easy to use high level language I love to use for just about any problem. Looking at it afterwards, I have to admit, that this was probably not the best decision to make. As Python is such a high level language, efficient working memory handeling is very hard in Python. As this is most limiting factor to the Proof-Number search, this is a real problem. In hindsight, it would probably have been a better choice to choose a lower level Language like C++.
-To be real fast while going through the variations of the game, I implemented Qango in terms of bitwise operations. The position can be represented using two 64 bit integers, one for the first players Stone, the other for the second players Stones. The set bits in the integer then represent which squares have been occupied by that player. Finding out what moves are allowed in a position is then just a matter of or-ing two integers and then forming the complement.
-When I then implemented the basic version of the Proof-Number search algorithm, I had to find out, that this was not even enough to solve the basic version of Qango. So I had to make the following improvements:
-1. **Make use of symetries and transpositions:** As each Qango position can be represented in 8 symetrical ways and positions can be reached through multiple paths, it would be stupid not to make use of that. So I read this [Paper](https://pdfs.semanticscholar.org/86f5/1429a19cfc76e9d42f28b93c62e978c816a0.pdf) and transformed my game tree into a directed acyclic graph.
-2. **Move ordering:** In Qango, the squares in the center, are much more likely to be usefull to occupy, than the squares in the corner. So it was important to make sure, that when there is a tie in the Proof-Number of two nodes, the algorithm first checks out the move closer to the center.
-3. **Deleting proven nodes:** Using above techniques, I was already able to solve the basic version of the Game in just a few seconds, but when trying with the *Burgregel*, I still ran out of memory. So I make use of a technique first described by Victor Allis and deleted all Nodes that where already proven from the game tree. The hash of their position is stored in either the *provenset* or the *disprovenset*, so I don't have to evaluate the positions again, when I reach them.
+## Usage
+Run `uwsgi --ini flask_server.ini` from the projects root. Head over to [localhost:5000](http://localhost:5000/) in your favorite browser. To start solving a game, click the on a `Analyze` link and then `Solve game for black/white`. GABOR performs binary game evaluation, so when solving for black, you are checking if the game is won for black or not (White wins or draw). To fully solve a game, you will need to try and solve for black as well as for white.
 
-## If you wan't to clone this repository
-Feel free to clone this repository and check out the code yourself, but be warned: As I implemented the code just for myself, I didn't do any documentation or commenting and the code will probably be very hard to understand for someone, who has not implemented it himself.
+## Why Graph Based?
+GABOR transforms any board game into a graph. Each winpattern will be a vertex and each square will be a vertex. Squares that are part of a winpattern share an edge with that winpattern. When a player occupies a square, that square will be removed from the graph and any connected winpattern vertex will be colored in that players color. If the winpattern has no edges left, the player wins. If the winpattern was already colored in the opponents player color, the winpattern vertex is removed. Any square vertex left without edges as a result is removed.
 
-## Further work
-As some other Qango players have also figured out, that the *Burgregel* is still a first player win. At some of the Qango tournaments, they have started to play with the inofficial *6x6 Profiregel*. Here the first player has to start on the edge of the board. It would be interesting to find out the game theoretical value of this way to play.
-Also, there is still the 7x7 version of the game, I haven't touched yet at all. As solving 6x6 Qango is much easier, as solving 7x7 Qango, this will probably only be possible with a better Computer and a memory efficient in C++. Also, I might need to look into some more sophisticated approaches as [PN²](https://www.researchgate.net/publication/292699512_The_PN2-search_algorithm) or PDS-PN.
+That way of representing the board game has the following advantages:
+* Uninteresting squares (Ones that correspond to no more winpatterns) are automatically removed
+* Heuristic move sorting is very easy (prefer square verticies, that correspond to many winpattern verticies of low degree)
+* We can exploit graph isomorphisms to avoid computing theoretically equivalent positions multiple times. GABOR uses Weisfeiler-Lehman based graph hashing for that. We can even recognize and exploit inter-game isomorphisms. There might be endgames in one game, that are isomorphic to endgames in another game.
+* We can implement a general [threat-space search](https://www.researchgate.net/publication/2252447_Go-Moku_and_Threat-Space_Search) algorithm (Threats are square verticies that are neighbours to a winpattern vertex of degree 2)
+
+## Algorithm
+Inspired by the paper [Go-Moku and Threat-Space Search](https://www.researchgate.net/publication/2252447_Go-Moku_and_Threat-Space_Search), GABOR uses a combination of [Proof-Number search](https://doi.org/10.1016/0004-3702(94)90004-3) and Threat-Space Search to solve games. A big advantage of GABORs graph representation are the transpositions/symetries/graph-isomorphisms. Thus, GABORs search structure is not a tree, as in the original Proof-Number search, but instead a directed acyclic graph (DAG). I used the practical algorithm described [here](https://pdfs.semanticscholar.org/86f5/1429a19cfc76e9d42f28b93c62e978c816a0.pdf) to make PN-search work on my DAG. Also, GABOR's implementation of the threat-space is not specifically built for a single game, as in the original papers implementation, but exploits the graph structure to know what a threat is and what not.
+
+## Games solved using GABOR
+To the best of my knowledge, GABOR is the first program to solve [Qango](https://www.yucata.de/en/Rules/QANGO), in all it's shapes and forms. You can view all proofs online at [http://python.yannikkeller.de/solver/](http://python.yannikkeller.de/solver/)
+
+## Author
+Yannik Keller
