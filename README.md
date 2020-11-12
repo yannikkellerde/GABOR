@@ -1,4 +1,3 @@
-# GABOR
 <p align="center">
   <a href="#installation">Installation</a>&nbsp;&nbsp;&bull;&nbsp;&nbsp;
   <a href="#usage">Usage</a>&nbsp;&nbsp;&bull;&nbsp;&nbsp;
@@ -8,6 +7,7 @@
   <a href="/sharing_solutions.md">Sharing solutions</a>
 </p>
 
+# GABOR
 ## What is GABOR?
 **G**r**A**ph **B**ased b**O**ard game solve**R** (GABOR) is a solving algorithm/program for a class of board games. That class is board games, where 2 players take alternating turns occupying squares. A player wins, if he manages to occupy all squares of a specific pattern. Real-world examples for this type of game are [tic tac toe](https://en.wikipedia.org/wiki/Tic-Tac-Toe), [Qango](http://qango.de/index.html?page=spiel&language=englisch) or [Go-Moku](https://en.wikipedia.org/wiki/Gomoku). GABOR can, without modifications, deal with any game of this class, no matter the shape of the board or the layout of the winpatterns.
 
