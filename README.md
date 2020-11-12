@@ -1,4 +1,13 @@
 # GABOR
+<p align="center">
+  <a href="#installation">Installation</a>&nbsp;&nbsp;&bull;&nbsp;&nbsp;
+  <a href="#usage">Usage</a>&nbsp;&nbsp;&bull;&nbsp;&nbsp;
+  <a href="#why-graph-based">Why Graph Based?</a>&nbsp;&nbsp;&bull;&nbsp;&nbsp;
+  <a href="#algorithm">Algorithm</a>&nbsp;&nbsp;&bull;&nbsp;&nbsp;
+  <a href="#games-solved-using-gabor">Games solved using GABOR</a>&nbsp;&nbsp;&bull;&nbsp;&nbsp;
+  <a href="/sharing_solutions.md">Sharing solutions</a>
+</p>
+
 ## What is GABOR?
 **G**r**A**ph **B**ased b**O**ard game solve**R** (GABOR) is a solving algorithm/program for a class of board games. That class is board games, where 2 players take alternating turns occupying squares. A player wins, if he manages to occupy all squares of a specific pattern. Real-world examples for this type of game are [tic tac toe](https://en.wikipedia.org/wiki/Tic-Tac-Toe), [Qango](http://qango.de/index.html?page=spiel&language=englisch) or [Go-Moku](https://en.wikipedia.org/wiki/Gomoku). GABOR can, without modifications, deal with any game of this class, no matter the shape of the board or the layout of the winpatterns.
 
@@ -19,7 +28,7 @@ If the install from `environment.yml` fails, you can try installing manually wit
 Run `uwsgi --ini flask_server.ini` from the projects root. Head over to [localhost:5000](http://localhost:5000/) in your favorite browser. To start solving a game, click the on a `Analyze` link and then `Solve game for black/white`. GABOR performs binary game evaluation, so when solving for black, you are checking if the game is won for black or not (White wins or draw). To fully solve a game, you will need to try and solve for black as well as for white.
 
 ## Why Graph Based?
-GABOR transforms any board game into a graph. Each winpattern will be a vertex and each square will be a vertex. Squares that are part of a winpattern share an edge with that winpattern. When a player occupies a square, that square will be removed from the graph and any connected winpattern vertex will be colored in that players color. If the winpattern has no edges left, the player wins. If the winpattern was already colored in the opponents player color, the winpattern vertex is removed. Any square vertex left without edges as a result is removed.
+GABOR transforms any board game into a graph. Each winpattern will be a vertex and each square will be a vertex. Squares that are part of a winpattern share an edge with that winpattern. When a player occupies a square, that square will be removed from the graph and any connected winpattern vertex will be colored in that players color. If the winpattern vertex was already in the players color and has no edges left, the player wins. If the winpattern was already colored in the opponents player color, the winpattern vertex is removed. Any square vertex left without edges as a result is removed.
 
 That way of representing the board game has the following advantages:
 * Uninteresting squares (Ones that correspond to no more winpatterns) are automatically removed
