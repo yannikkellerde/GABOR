@@ -455,7 +455,6 @@ else{
         position = res[2];
         position_hist = res[3];
         reset();
-        show_moves();
         letter_board();
         xml_http_post("explore_wins",{request:"rulesets",game_name:game_name},set_rulesets);
         xml_http_post("explore_wins",{request:"aval_proofsets",game_name:game_name},set_aval_proofsets);

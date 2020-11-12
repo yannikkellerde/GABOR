@@ -131,6 +131,7 @@ class Solver_analyze():
                 proofsets = os.listdir(os.path.join(base_path,"..","proofsets"))
                 if game.name in proofsets:
                     pname = game.name
+                    self.get_proofsets(game.name,uid)
                 else:
                     if uid in self.session_to_pset_name:
                         pname = self.session_to_pset_name[uid]
@@ -139,7 +140,6 @@ class Solver_analyze():
                             pname = proofsets[0]
                         else:
                             pname = "new_proofset"
-                self.get_proofsets(game.name,uid)
                 out = json.dumps({"proofsets":proofsets,"default":pname if pname in proofsets else proofsets[0]})
         elif "new_proofset" in data:
             self.create_proofset(game,data["new_proofset"])
