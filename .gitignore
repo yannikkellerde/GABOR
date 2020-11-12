@@ -15,3 +15,6 @@ geckodriver
 old_proofsets/
 yucataing_it/
 old_code/
+ai_api.py
+helper_program.py
+merge_sets.py
