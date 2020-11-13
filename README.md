@@ -15,7 +15,9 @@
 On [http://python.yannikkeller.de/solver/](http://python.yannikkeller.de/solver/), you can find a community platform for sharing and exploring games and solutions created by GABOR. If you just want to see some of GABORs findings without installing anything, you should probably head over there. However, to start solving your own games, you will have to install GABOR on your computer. You can then head back to [http://python.yannikkeller.de/solver/](http://python.yannikkeller.de/solver/) and share your computed solutions with the world.
 
 ## Installation
-Requirements: `python3.8+, graph-tool, flask, flask-socketio, uwsgi, psutil`  
+Installation instructions are for linux systems. You should also be able to get it to work on Windows or MacOS using the [installation instructions](https://git.skewed.de/count0/graph-tool/-/wikis/installation-instructions#windows) for graph-tool.
+
+Requirements: `python3.8+, graph-tool, flask, flask-socketio, psutil`  
 GABOR depends on [graph-tool](https://graph-tool.skewed.de/), which is easiest installed via conda. If you have conda ready, you can install from [environment.yml](/environment.yml) via `conda env create -f environment.yml`. Activate the env via `conda activate GABOR`
 
 If the install from `environment.yml` fails, you can try installing manually with the commands  
