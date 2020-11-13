@@ -20,12 +20,11 @@ GABOR depends on [graph-tool](https://graph-tool.skewed.de/), which is easiest i
 
 If the install from `environment.yml` fails, you can try installing manually with the commands  
 `conda install -c conda-forge graph-tool`  
-`conda activate gt`  
-`conda install -c conda-forge uwsgi`  
+`conda activate gt`   
 `pip install flask flask_socketio psutil`
 
 ## Usage
-Run `uwsgi --ini flask_server.ini` from the projects root. Head over to [localhost:5000](http://localhost:5000/) in your favorite browser. To start solving a game, click the on a `Analyze` link and then `Solve game for black/white`. GABOR performs binary game evaluation, so when solving for black, you are checking if the game is won for black or not (White wins or draw). To fully solve a game, you will need to try and solve for black as well as for white.
+Run `export FLASK_APP=flask_server.py;flask run` from the projects root. Head over to [localhost:5000](http://localhost:5000/) in your favorite browser. To start solving a game, click the on a `Analyze` link and then `Solve game for black/white`. GABOR performs binary game evaluation, so when solving for black, you are checking if the game is won for black or not (White wins or draw). To fully solve a game, you will need to try and solve for black as well as for white.
 
 ## Why Graph Based?
 GABOR transforms any board game into a graph. Each winpattern will be a vertex and each square will be a vertex. Squares that are part of a winpattern share an edge with that winpattern. When a player occupies a square, that square will be removed from the graph and any connected winpattern vertex will be colored in that players color. If the winpattern vertex was already in the players color and has no edges left, the player wins. If the winpattern was already colored in the opponents player color, the winpattern vertex is removed. Any square vertex left without edges as a result is removed.
