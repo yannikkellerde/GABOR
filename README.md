@@ -33,7 +33,7 @@ GABOR transforms any board game into a graph. Each winpattern will be a vertex a
 
 That way of representing the board game has the following advantages:
 * Uninteresting squares (Ones that correspond to no more winpatterns) are automatically removed
-* Heuristic move sorting is very easy (prefer square verticies, that correspond to many winpattern verticies of low degree)
+* Heuristic move sorting is very easy (prefer square verticies, that are connected to to many winpattern verticies of low degree)
 * We can exploit graph isomorphisms to avoid computing theoretically equivalent positions multiple times. GABOR uses Weisfeiler-Lehman based graph hashing for that. We can even recognize and exploit inter-game isomorphisms. There might be endgames in one game, that are isomorphic to endgames in another game.
 * We can implement a general [threat-space search](https://www.researchgate.net/publication/2252447_Go-Moku_and_Threat-Space_Search) algorithm (Threats are square verticies that are neighbours to a winpattern vertex of degree 2)
 
